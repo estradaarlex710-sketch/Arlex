@@ -3,39 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Inventario</title>
+    <title>INVENTIFY</title>
     <meta name="theme-color" content="#34495e">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        :root { --primary:#34495e; --green:#27ae60; --red:#e74c3c; --orange:#f39c12; --blue:#2980b9; --bg:#f5f7fa; --surface:white; --text:#2c3e50; --border:#e5e7e9; }
-        body.oscuro { --bg:#1e272e; --surface:#2f3640; --text:#f5f6fa; --border:#4b5563; --primary:#192a56; }
+        :root { 
+            --primary:#263a63; 
+            --primary-light:#5269a5; 
+            --green:#16a085; 
+            --red:#e05252; 
+            --orange:#f39c12; 
+            --blue:#4361ee; 
+            --purple:#7c3aed; 
+            --bg:#f2f5fb; 
+            --surface:#ffffff; 
+            --text:#26344d; 
+            --muted:#718096; 
+            --border:#e2e8f0; 
+            --shadow:0 10px 30px rgba(38,58,99,.08); 
+        }
+        body.oscuro { 
+            --bg:#111827; 
+            --surface:#1f2937; 
+            --text:#f5f6fa; 
+            --muted:#aeb8c7; 
+            --border:#374151; 
+            --primary:#18264d; 
+            --shadow:0 10px 30px rgba(0,0,0,.2); 
+        }
         * { box-sizing:border-box; }
-        body { font-family:'Segoe UI',Tahoma,sans-serif; max-width:1200px; margin:25px auto; padding:0 18px; background:var(--bg); color:var(--text); transition:.2s; }
-        h1 { text-align:center; margin-bottom:25px; }
-        .resumen { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
-        .tarjeta { background:var(--surface); padding:18px; border-radius:10px; box-shadow:0 3px 10px #0000000d; text-align:center; }
-        .tema { float:right; margin-bottom:10px; }
-        .tarjeta strong { display:block; font-size:1.65rem; color:var(--blue); margin-top:5px; }
-        .panel, .form-inventario, .grafico { background:var(--surface); padding:18px; border-radius:10px; box-shadow:0 3px 10px #0000000d; margin-bottom:20px; }
+        body { font-family:'Segoe UI',Tahoma,sans-serif; max-width:1200px; margin:0 auto; padding:28px 18px 40px; background:radial-gradient(circle at 100% 0%, #e9edff 0, transparent 32%), var(--bg); color:var(--text); transition:.2s; }
+        body.oscuro { background:radial-gradient(circle at 100% 0%, #1d2b4b 0, transparent 32%), var(--bg); }
+        ::selection { background:var(--blue); color:white; }
+        h1 { letter-spacing:-.04em; }
+        h2 { letter-spacing:-.02em; }
+        button, input, select { transition:box-shadow .2s, transform .2s, border-color .2s, background .2s; }
+        button:hover { transform:translateY(-1px); }
+        input:focus, select:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px #4361ee22; }
+        .nota { color:var(--muted); }
+        
+        /* Encabezado y Menú */
+        header { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; flex-wrap:wrap; gap:15px; padding:18px 20px; border-radius:18px; background:linear-gradient(135deg, var(--primary), #4361ee); color:white; box-shadow:0 12px 28px #263a6333; }
+        .encabezado-marca { display:flex; align-items:center; gap:12px; }
+        h1 { margin:0; font-size:1.8rem; }
+        header > div:last-child button { box-shadow:0 4px 12px #0002; }
+        header .btn-secundario { background:#ffffff22; color:white; border:1px solid #ffffff44; }
+        .btn-menu { background:var(--primary); color:white; font-size:1.35rem; line-height:1; padding:10px 12px; min-width:46px; border-radius:5px; border:none; cursor:pointer; }
+        .btn-menu:hover { filter:brightness(1.15); }
+
+        /* Menú lateral de usuario y soporte */
+        .menu-lateral { position:fixed; inset:0 auto 0 0; z-index:150; width:min(410px, 92vw); padding:22px; overflow-y:auto; background:var(--surface); color:var(--text); box-shadow:8px 0 25px #0004; transform:translateX(-105%); transition:transform .25s ease; }
+        .menu-lateral.abierto { transform:translateX(0); }
+        .menu-lateral-cabecera { display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid var(--border); padding-bottom:15px; }
+        .menu-lateral h2 { margin:0; font-size:1.25rem; }
+        .btn-cerrar-menu { background:transparent; color:var(--text); font-size:1.5rem; padding:3px 8px; border:none; cursor:pointer; }
+        
+        /* Pestañas dentro del menú lateral */
+        .tabs-menu-lateral { display:flex; gap:5px; border-bottom:1px solid var(--border); margin-top:15px; margin-bottom:15px; }
+        .tab-btn-lateral { flex:1; padding:8px 4px; border:none; background:transparent; color:var(--text); font-weight:600; font-size:0.85rem; cursor:pointer; border-bottom:2px solid transparent; opacity:0.7; }
+        .tab-btn-lateral.activa { border-bottom-color:var(--blue); color:var(--blue); opacity:1; }
+
+        .perfil-usuario { display:flex; align-items:center; gap:12px; padding:16px 0; border-bottom:1px solid var(--border); }
+        .avatar-usuario { display:grid; place-items:center; width:50px; height:50px; border-radius:50%; background:var(--blue); color:white; font-size:1.5rem; font-weight:bold; overflow:hidden; cursor:pointer; flex-shrink:0; }
+        .avatar-usuario img { width:100%; height:100%; object-fit:cover; }
+        .selector-foto { display:block; margin-top:5px; color:var(--blue); font-size:.78rem; cursor:pointer; }
+        .selector-foto input { display:none; }
+        .perfil-usuario strong, .guia-funcion strong { display:block; }
+        .datos-usuario { display:flex; flex-direction:column; gap:3px; margin-top:6px; font-size:.82rem; }
+        .progreso-perfil { margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:8px; background:var(--bg); }
+        .progreso-perfil-cabecera { display:flex; justify-content:space-between; gap:10px; margin-bottom:7px; font-size:.86rem; }
+        .progreso-perfil .barra-meta { height:8px; }
+        .progreso-perfil .barra-meta span { width:0; }
+        .accesos-usuario { margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:8px; background:var(--bg); }
+        .plan-usuario { margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:8px; background:linear-gradient(135deg,rgba(99,91,255,.12),rgba(24,224,181,.08)); }
+        .plan-usuario-cabecera { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+        .etiqueta-plan { display:inline-block; padding:4px 9px; border-radius:12px; background:var(--green); color:#07152c; font-size:.78rem; font-weight:800; }
+        .plan-usuario p { margin:8px 0; font-size:.84rem; line-height:1.4; }
+        .plan-usuario button { width:100%; padding:8px 10px; font-size:.82rem; }
+        .accesos-usuario-botones { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:9px; }
+        .accesos-usuario-botones button { padding:8px 6px; font-size:.82rem; }
+        @media (max-width:420px) { .accesos-usuario-botones { grid-template-columns:1fr; } }
+        
+        /* Info del sistema en menú lateral */
+        .info-sistema-box { background:var(--bg); border-radius:8px; padding:12px; margin-top:12px; border:1px solid var(--border); font-size:0.85rem; }
+        .info-sistema-box div { display:flex; justify-content:space-between; margin-bottom:5px; }
+
+        /* Apartado de Ayuda / Soporte */
+        .seccion-soporte { display:flex; flex-direction:column; gap:12px; margin-top:10px; }
+        .tarjeta-soporte { background:var(--bg); border-radius:8px; padding:14px; border-left:4px solid var(--blue); }
+        .tarjeta-soporte h4 { margin:0 0 6px 0; font-size:0.98rem; }
+        .tarjeta-soporte p { margin:0 0 10px 0; font-size:0.88rem; line-height:1.4; color:var(--text); }
+        .btn-soporte-correo { display:inline-flex; align-items:center; gap:8px; background:var(--blue); color:white; padding:10px 14px; border-radius:6px; text-decoration:none; font-weight:600; font-size:0.9rem; transition:background .2s; justify-content:center; width:100%; text-align:center; }
+        .btn-soporte-correo:hover { background:#2171a5; }
+        .btn-copiar-correo { background:transparent; border:1px dashed var(--border); color:var(--text); padding:6px 10px; font-size:0.8rem; border-radius:4px; cursor:pointer; margin-top:6px; width:100%; }
+
+        /* Preguntas Frecuentes */
+        details.faq-item { background:var(--bg); padding:10px; border-radius:6px; margin-bottom:8px; font-size:0.88rem; }
+        details.faq-item summary { font-weight:600; cursor:pointer; }
+        details.faq-item p { margin:8px 0 0 0; line-height:1.4; }
+
+        /* Chat de ayuda */
+        .chat-ayuda { margin-top:18px; padding:14px; background:var(--bg); border:1px solid var(--border); border-radius:8px; }
+        .chat-ayuda h3 { margin:0 0 6px; color:var(--blue); font-size:1.05rem; }
+        .chat-mensajes { height:240px; overflow-y:auto; padding:10px; margin:10px 0; background:var(--surface); border:1px solid var(--border); border-radius:7px; }
+        .mensaje-chat { max-width:90%; padding:9px 11px; margin:7px 0; border-radius:8px; line-height:1.4; font-size:.88rem; white-space:pre-line; }
+        .mensaje-chat.ia { margin-right:auto; background:#eaf3f8; color:#243746; }
+        .mensaje-chat.usuario { margin-left:auto; background:var(--blue); color:white; }
+        body.oscuro .mensaje-chat.ia { background:#3b4652; color:var(--text); }
+        .form-chat { display:flex; gap:7px; }
+        .form-chat input { min-width:0; }
+        .form-chat button { flex-shrink:0; background:var(--blue); color:white; }
+
+        .guia { margin-top:10px; }
+        .guia h3 { margin:18px 0 8px; color:var(--blue); font-size:1.05rem; }
+        .guia-funcion { padding:12px 0; border-bottom:1px solid var(--border); font-size:.92rem; line-height:1.45; }
+        .guia-funcion p { margin:4px 0 0; }
+        .capa-menu { position:fixed; inset:0; z-index:140; background:#0007; opacity:0; pointer-events:none; transition:opacity .25s ease; }
+        .capa-menu.visible { opacity:1; pointer-events:auto; }
+        
+        .nav-menu { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:7px; box-shadow:var(--shadow); gap:6px; margin-bottom:28px; overflow-x:auto; }
+        .nav-tab { padding:11px 18px; border:0; background:transparent; color:var(--text); font-weight:700; border-radius:9px; cursor:pointer; transition:.2s; white-space:nowrap; }
+        .nav-tab:hover { color:var(--blue); }
+        .nav-tab.activa { box-shadow:0 5px 12px #4361ee44; }
+        .nav-tab:hover { background:#f0f3f6; }
+        body.oscuro .nav-tab:hover { background:#3a4454; }
+        .nav-tab.activa { background:var(--blue); color:white; }
+        
+        /* Secciones */
+        .seccion-contenido { display:none; }
+        .seccion-contenido.activa { display:block; }
+
+        .controles-superiores { display:flex; justify-content:flex-end; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+        .resumen { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px; }
+        .tarjeta { background:var(--surface); padding:20px 16px; border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); text-align:center; }
+        .resumen .tarjeta { position:relative; overflow:hidden; }
+        .resumen .tarjeta::before { content:''; position:absolute; inset:0 0 auto; height:4px; background:linear-gradient(90deg,var(--blue),var(--purple)); }
+        .resumen .tarjeta:nth-child(2)::before { background:linear-gradient(90deg,var(--green),#2ecc71); }
+        .resumen .tarjeta:nth-child(5)::before { background:linear-gradient(90deg,var(--orange),var(--red)); }
+        .tarjeta strong { display:block; font-size:1.5rem; color:var(--blue); margin-top:5px; }
+        .tarjeta.ganancia strong { color:var(--green); }
+        .panel, .form-inventario, .grafico { background:var(--surface); padding:20px; border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); margin-bottom:20px; }
+        .panel h2, .grafico h2 { color:var(--primary-light); }
+        body.oscuro .panel h2, body.oscuro .grafico h2 { color:#9eb2ff; }
         body.oscuro input, body.oscuro select { background:#353b48; color:var(--text); border-color:#596275; }
         .form-inventario { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+        .campo-categoria { display:flex; flex-direction:column; gap:6px; }
+        .nueva-categoria { display:flex; gap:5px; }
+        .nueva-categoria input { min-width:0; }
+        .nueva-categoria button { padding:8px 10px; white-space:nowrap; }
         input, select, button { font:inherit; }
         input, select { width:100%; padding:10px; border:1px solid #ccd3da; border-radius:5px; background:white; }
         button { border:0; border-radius:5px; padding:10px 14px; cursor:pointer; font-weight:600; }
-        .btn-principal { background:var(--green); color:white; grid-column:span 2; }
-        .btn-secundario { background:#ecf0f1; color:#2c3e50; }
-        .btn-editar { background:var(--blue); color:white; }
+        .btn-principal { background:linear-gradient(135deg,var(--green),#21b486); color:white; grid-column:span 2; }
+        .btn-secundario { background:#eef2f7; color:#2c3e50; }
+        .btn-editar { background:linear-gradient(135deg,var(--blue),#5b72f2); color:white; }
+        .btn-principal:hover, .btn-editar:hover, .btn-pdf:hover { filter:brightness(1.08); box-shadow:0 6px 16px #4361ee33; }
+        body.oscuro .btn-secundario { background:#374151; color:var(--text); }
         .btn-eliminar { background:var(--red); color:white; }
         .btn-mov { background:#8e44ad; color:white; }
         .btn-vender { background:#d35400; color:white; }
+        .btn-pdf { background:#8e44ad; color:white; }
         .filtros { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:10px; }
         .tabla-contenedor { overflow-x:auto; }
         table { width:100%; border-collapse:collapse; background:var(--surface); min-width:1250px; }
         th,td { padding:11px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:middle; }
-        th { background:var(--primary); color:white; cursor:pointer; white-space:nowrap; }
-        tbody tr:hover { background:#f8fbfd; }
-        body.oscuro tbody tr:hover { background:#353b48; }
+        th { background:linear-gradient(135deg,var(--primary),#405582); color:white; cursor:pointer; white-space:nowrap; }
+        tbody tr:hover { background:#eef3ff; }
+        tbody tr:nth-child(even) { background:color-mix(in srgb, var(--bg) 35%, transparent); }
+        body.oscuro tbody tr:hover { background:#293858; }
+        body.oscuro tbody tr:hover { background:#3a4454; }
         .acciones { display:flex; gap:5px; flex-wrap:wrap; }
         .estado-disponible { color:var(--green); font-weight:bold; }
         .estado-agotado { color:var(--red); font-weight:bold; }
@@ -43,266 +185,1996 @@
         .alerta { color:var(--red); font-weight:bold; }
         .vencido { color:var(--red); font-weight:bold; }
         .vacio { text-align:center; color:#7f8c8d; padding:25px; }
-        .movimientos { margin-top:22px; }
-        .movimientos ul { margin:8px 0 0; padding-left:20px; }
-        .oculto { display:none; }
+        .movimientos ul { margin:8px 0 0; padding-left:0; list-style:none; }
+        .movimientos li { padding:8px 12px; border-bottom:1px solid var(--border); font-size:0.95rem; }
+        .resumen-ventas { margin-top:18px; padding:15px; border:1px solid var(--border); border-radius:8px; background:var(--bg); }
+        .resumen-ventas h3 { margin:0 0 8px; font-size:1rem; }
+        .resumen-ventas p { margin:6px 0; }
+        .analisis-inteligente { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-top:15px; }
+        .recomendacion { padding:14px; border-left:4px solid var(--blue); border-radius:7px; background:var(--bg); line-height:1.45; }
+        .recomendacion strong { display:block; margin-bottom:5px; }
+        .recomendacion.alerta-analisis { border-left-color:var(--red); }
+        .recomendacion.exito-analisis { border-left-color:var(--green); }
+        .recomendacion.aviso-analisis { border-left-color:var(--orange); }
+        @media (max-width:760px) { .analisis-inteligente { grid-template-columns:1fr; } }
+        .oculto { display:none !important; }
         .nota { color:#68747d; font-size:.9rem; }
         .graficos { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-bottom:20px; }
         .grafico { margin-bottom:0; }
+        .form-ajuste { display:grid; grid-template-columns:2fr 1fr 2fr auto; gap:10px; align-items:end; }
+        .lista-copias { margin-top:15px; }
+        .lista-copias li { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+        .lista-copias button { padding:6px 10px; }
+        @media (max-width:760px) { .form-ajuste { grid-template-columns:1fr; } .lista-copias li { align-items:flex-start; flex-direction:column; } }
         .grafico h2 { margin:0 0 12px; font-size:1.1rem; }
-        canvas { display:block; width:100%; height:250px; }
-        #notificacion { position:fixed; right:20px; bottom:20px; z-index:10; padding:13px 18px; border-radius:7px; background:#2c3e50; color:white; box-shadow:0 4px 14px #0004; opacity:0; transform:translateY(15px); pointer-events:none; transition:.25s ease; }
+        canvas { display:block; width:100%; height:250px !important; }
+        .admin-solo { display:none; }
+        body.es-admin .admin-solo { display:block; }
+        .admin-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+        .indicador-financiero { padding:15px; border-radius:8px; background:var(--bg); border-left:4px solid var(--blue); }
+        .indicador-financiero strong { display:block; font-size:1.35rem; margin-top:5px; }
+        .tabla-simple { min-width:600px; }
+        .barra-meta { height:12px; overflow:hidden; border-radius:20px; background:var(--border); }
+        .barra-meta span { display:block; height:100%; background:var(--green); transition:width .25s; }
+        .etiqueta-rol { display:inline-block; padding:3px 8px; border-radius:12px; background:var(--blue); color:white; font-size:.78rem; }
+        #notificacion { position:fixed; right:20px; bottom:20px; z-index:200; padding:13px 18px; border-radius:7px; background:#2c3e50; color:white; box-shadow:0 4px 14px #0004; opacity:0; transform:translateY(15px); pointer-events:none; transition:.25s ease; }
         #notificacion.visible { opacity:1; transform:translateY(0); }
         #notificacion.error { background:var(--red); }
-        .modal { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; padding:20px; background:#0008; }
+        .modal { position:fixed; inset:0; z-index:120; display:flex; align-items:center; justify-content:center; padding:20px; background:#0008; }
         .modal.oculto { display:none; }
-        .modal-contenido { width:min(100%, 400px); background:var(--surface); color:var(--text); padding:22px; border-radius:10px; box-shadow:0 8px 30px #0005; }
+        #modal-acceso { z-index:120; }
+        #modal-comprobante { z-index:130; }
+        #modal-acceso .modal-contenido { width:min(100%, 400px); }
+        #modal-comprobante .modal-contenido { width:min(100%, 420px); text-align:center; }
+        #modal-comprobante .modal-acciones { justify-content:center; flex-wrap:wrap; }
+        #modal-pin-admin { z-index:140; }
+        #modal-pin-admin .modal-contenido { width:min(100%, 380px); text-align:center; }
+        #modal-pin-admin label { text-align:left; }
+        #pin-admin { text-align:center; letter-spacing:.35em; font-size:1.35rem; font-weight:700; }
+        .modal-contenido { width:min(100%, 450px); background:var(--surface); color:var(--text); padding:22px; border-radius:10px; box-shadow:0 8px 30px #0005; }
+        .mensaje-acceso { min-height:20px; margin:10px 0 0; color:var(--red); font-size:.9rem; }
+        .enlace-acceso { background:transparent; color:var(--blue); padding:10px 0; border:none; cursor:pointer; }
         .modal-contenido h2 { margin:0 0 8px; }
         .modal-contenido label { display:block; margin:16px 0 6px; font-weight:600; }
         .modal-acciones { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
-        @media (max-width:760px) { .graficos { grid-template-columns:1fr; } }
-        @media (max-width:760px) { .resumen { grid-template-columns:repeat(2,1fr); } .form-inventario,.filtros { grid-template-columns:1fr; } .btn-principal { grid-column:auto; } }
+
+        @media (max-width:900px) { .resumen { grid-template-columns:repeat(2,1fr); } }
+        @media (max-width:760px) { .graficos { grid-template-columns:1fr; } .form-inventario,.filtros { grid-template-columns:1fr; } .btn-principal { grid-column:auto; } }
+        /* ✦ Estética futurista: neon, vidrio y dashboard tecnológico */
+        :root {
+            --primary:#111b3d;
+            --primary-light:#5ee7ff;
+            --blue:#635bff;
+            --purple:#b14cff;
+            --green:#18e0b5;
+            --orange:#ffb547;
+            --red:#ff5577;
+            --bg:#080d20;
+            --surface:rgba(17,27,61,.78);
+            --text:#edf5ff;
+            --muted:#91a4c5;
+            --border:rgba(115,225,255,.2);
+            --shadow:0 16px 45px rgba(0,0,0,.32), 0 0 24px rgba(99,91,255,.1);
+        }
+        body {
+            position:relative;
+            isolation:isolate;
+            max-width:1280px;
+            background:
+                radial-gradient(circle at 8% 8%, rgba(99,91,255,.2), transparent 28%),
+                radial-gradient(circle at 92% 18%, rgba(24,224,181,.13), transparent 24%),
+                linear-gradient(135deg,#070b1b 0%,#0b1230 48%,#080d20 100%);
+            color:var(--text);
+        }
+        body::before {
+            content:'';
+            position:fixed;
+            inset:0;
+            z-index:-1;
+            pointer-events:none;
+            opacity:.18;
+            background-image:linear-gradient(rgba(94,231,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(94,231,255,.16) 1px,transparent 1px);
+            background-size:42px 42px;
+            mask-image:linear-gradient(to bottom,black,transparent 90%);
+        }
+        body.oscuro {
+            --bg:#080d20;
+            --surface:rgba(17,27,61,.78);
+            --text:#edf5ff;
+            --muted:#91a4c5;
+            --border:rgba(115,225,255,.2);
+            background:linear-gradient(135deg,#070b1b,#0b1230 48%,#080d20);
+        }
+        header {
+            position:relative;
+            overflow:hidden;
+            border:1px solid rgba(94,231,255,.35);
+            background:linear-gradient(120deg,rgba(19,33,78,.95),rgba(53,39,123,.92),rgba(8,92,108,.9));
+            box-shadow:0 0 0 1px rgba(177,76,255,.12),0 18px 45px rgba(0,0,0,.35),0 0 30px rgba(94,231,255,.16);
+        }
+        header::after {
+            content:'';
+            position:absolute;
+            width:180px;
+            height:180px;
+            right:6%;
+            top:-100px;
+            border:1px solid rgba(94,231,255,.35);
+            border-radius:50%;
+            box-shadow:0 0 0 14px rgba(94,231,255,.06),0 0 0 28px rgba(177,76,255,.05);
+        }
+        h1,h2 { text-shadow:0 0 18px rgba(94,231,255,.22); }
+        .nav-menu,.tarjeta,.panel,.form-inventario,.grafico,.modal-contenido,.menu-lateral {
+            background:linear-gradient(145deg,rgba(19,31,69,.88),rgba(10,18,43,.78));
+            border-color:var(--border);
+            backdrop-filter:blur(14px);
+        }
+        .nav-menu { box-shadow:var(--shadow); }
+        .nav-tab { color:#c9d8f6; }
+        .nav-tab:hover { color:#fff; background:rgba(94,231,255,.1); }
+        .nav-tab.activa {
+            background:linear-gradient(135deg,var(--blue),var(--purple));
+            box-shadow:0 0 18px rgba(99,91,255,.55),inset 0 1px rgba(255,255,255,.25);
+        }
+        .tarjeta { box-shadow:var(--shadow); }
+        .resumen .tarjeta::before { height:3px; box-shadow:0 0 14px currentColor; }
+        .tarjeta strong { color:#6ee8ff; text-shadow:0 0 15px rgba(94,231,255,.35); }
+        .tarjeta.ganancia strong { color:#35f0bd; }
+        .panel h2,.grafico h2 { color:#72eaff; }
+        input,select {
+            color:var(--text);
+            background:rgba(7,14,35,.82);
+            border-color:rgba(115,225,255,.25);
+        }
+        input::placeholder { color:#7085a8; }
+        input:focus,select:focus { border-color:#5ee7ff; box-shadow:0 0 0 3px rgba(94,231,255,.16),0 0 18px rgba(94,231,255,.18); }
+        button { position:relative; overflow:hidden; }
+        button::after {
+            content:'';
+            position:absolute;
+            inset:0;
+            background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.22),transparent 70%);
+            transform:translateX(-120%);
+            transition:transform .45s ease;
+        }
+        button:hover::after { transform:translateX(120%); }
+        .btn-principal,.btn-editar,.btn-pdf,.btn-mov,.btn-vender,.btn-eliminar {
+            border:1px solid rgba(255,255,255,.16);
+            box-shadow:0 0 16px rgba(99,91,255,.2);
+        }
+        .btn-principal { background:linear-gradient(135deg,#0bbf9a,#18e0b5); }
+        .btn-editar { background:linear-gradient(135deg,#5147e8,#a44cff); }
+        .btn-pdf { background:linear-gradient(135deg,#6839c9,#b14cff); }
+        .btn-mov { background:linear-gradient(135deg,#7b35b7,#d447c8); }
+        .btn-vender { background:linear-gradient(135deg,#d35b19,#ff9d32); }
+        .btn-eliminar { background:linear-gradient(135deg,#d63b5b,#ff5577); }
+        .btn-secundario { background:rgba(116,143,194,.16); color:#dce9ff; border:1px solid rgba(115,225,255,.22); }
+        th { background:linear-gradient(135deg,#18285b,#273a83); box-shadow:inset 0 -1px rgba(94,231,255,.35); }
+        tbody tr:hover { background:rgba(94,231,255,.09); }
+        tbody tr:nth-child(even) { background:rgba(99,91,255,.055); }
+        .estado-disponible { color:#35f0bd; text-shadow:0 0 10px rgba(53,240,189,.3); }
+        .estado-agotado { color:#ff6687; text-shadow:0 0 10px rgba(255,85,119,.3); }
+        .recomendacion,.info-sistema-box,.chat-ayuda,.resumen-ventas,.faq-item { background:rgba(7,15,38,.58); border-color:rgba(94,231,255,.2); }
+        .avatar-usuario { background:linear-gradient(135deg,var(--blue),var(--purple)); box-shadow:0 0 22px rgba(99,91,255,.55); }
+        #notificacion { background:linear-gradient(135deg,#162957,#3b2b91); border:1px solid rgba(94,231,255,.35); box-shadow:0 0 25px rgba(99,91,255,.35); }
+        @keyframes neonPulse { 0%,100%{box-shadow:0 0 14px rgba(94,231,255,.12)} 50%{box-shadow:0 0 24px rgba(177,76,255,.22)} }
+        header,.nav-menu { animation:neonPulse 5s ease-in-out infinite; }
+        @media (prefers-reduced-motion:reduce) { header,.nav-menu { animation:none; } }
+
+        /* Tema claro real: el modo oscuro se activa únicamente con body.oscuro. */
+        body:not(.oscuro) {
+            --primary:#263a63;
+            --primary-light:#365486;
+            --blue:#315bea;
+            --purple:#7c3aed;
+            --green:#129a7d;
+            --orange:#d98200;
+            --red:#d83f62;
+            --bg:#eef3f9;
+            --surface:#ffffff;
+            --text:#1f2d44;
+            --muted:#5e6d82;
+            --border:#d5deea;
+            --shadow:0 10px 28px rgba(38,58,99,.12);
+            background:
+                radial-gradient(circle at 8% 8%, rgba(99,91,255,.13), transparent 28%),
+                radial-gradient(circle at 92% 18%, rgba(24,160,133,.11), transparent 24%),
+                linear-gradient(135deg,#f8fbff 0%,#eef3f9 48%,#e8eef8 100%);
+        }
+        body:not(.oscuro)::before {
+            opacity:.28;
+            background-image:linear-gradient(rgba(49,91,234,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(49,91,234,.10) 1px,transparent 1px);
+        }
+        body:not(.oscuro) header {
+            border-color:#c5d4ef;
+            background:linear-gradient(120deg,#263a63,#4361ee,#168f88);
+            box-shadow:0 12px 30px rgba(38,58,99,.2);
+        }
+        body:not(.oscuro) .nav-menu,
+        body:not(.oscuro) .tarjeta,
+        body:not(.oscuro) .panel,
+        body:not(.oscuro) .form-inventario,
+        body:not(.oscuro) .grafico,
+        body:not(.oscuro) .modal-contenido,
+        body:not(.oscuro) .menu-lateral {
+            background:rgba(255,255,255,.94);
+            border-color:var(--border);
+            color:var(--text);
+            backdrop-filter:blur(10px);
+        }
+        body:not(.oscuro) .nav-tab { color:var(--text); }
+        body:not(.oscuro) .nav-tab:hover { color:var(--blue); background:#edf3ff; }
+        body:not(.oscuro) .nav-tab.activa { color:white; background:linear-gradient(135deg,var(--blue),var(--purple)); }
+        body:not(.oscuro) input,
+        body:not(.oscuro) select {
+            color:var(--text);
+            background:#fff;
+            border-color:#c5d0df;
+        }
+        body:not(.oscuro) input::placeholder { color:#718096; }
+        body:not(.oscuro) th { background:linear-gradient(135deg,#263a63,#405f9c); }
+        body:not(.oscuro) tbody tr:hover { background:#edf4ff; }
+        body:not(.oscuro) tbody tr:nth-child(even) { background:#f7f9fd; }
+        body:not(.oscuro) .btn-secundario { background:#edf2f8; color:#26344d; border-color:#cbd6e5; }
+        body:not(.oscuro) .panel h2,
+        body:not(.oscuro) .grafico h2 { color:#315486; text-shadow:none; }
+        body:not(.oscuro) h1,
+        body:not(.oscuro) h2 { text-shadow:none; }
+        body:not(.oscuro) .recomendacion,
+        body:not(.oscuro) .info-sistema-box,
+        body:not(.oscuro) .chat-ayuda,
+        body:not(.oscuro) .resumen-ventas,
+        body:not(.oscuro) details.faq-item {
+            background:#f5f8fc;
+            border-color:#d5deea;
+        }
+        body:not(.oscuro) .mensaje-chat.ia { background:#e8f0f7; color:#243746; }
+        body:not(.oscuro) .chat-mensajes { background:#fff; }
+
+        /* Accesibilidad y uso sencillo en pantallas pequeñas */
+        button, input, select { min-height:44px; }
+        button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline:3px solid #ffdf5d; outline-offset:2px; }
+        .ayuda-boton { display:block; color:var(--muted); font-size:.82rem; margin-top:4px; }
+        .texto-confirmacion { line-height:1.5; font-size:1.05rem; }
+        @media (max-width:760px) {
+            body { padding:12px 10px 30px; }
+            header { padding:15px; }
+            h1 { font-size:1.35rem; }
+            header > div:last-child { width:100%; justify-content:stretch !important; }
+            header > div:last-child button { flex:1 1 100%; }
+            .nav-menu { margin-bottom:18px; }
+            .nav-tab { min-height:48px; padding:12px 14px; }
+            .form-inventario { gap:14px; }
+            .panel, .form-inventario, .grafico { padding:15px; }
+            table { min-width:1100px; }
+            .acciones button { min-width:92px; }
+            .modal { padding:10px; }
+        }
+        @media (min-width:761px) and (max-width:1000px) { table { min-width:1100px; } }
+
+        /* Vista móvil sin desplazamiento horizontal: cada fila se convierte en una tarjeta. */
+        @media (max-width:760px) {
+            .tabla-contenedor { overflow-x:visible; }
+            table, table thead, table tbody, table tr, table th, table td { display:block; }
+            table { min-width:0; width:100%; background:transparent; }
+            table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+            table tbody tr {
+                margin-bottom:14px;
+                padding:10px;
+                border:1px solid var(--border);
+                border-radius:12px;
+                background:var(--surface);
+                box-shadow:var(--shadow);
+            }
+            table tbody tr:nth-child(even), table tbody tr:hover { background:var(--surface); }
+            table tbody td {
+                display:grid;
+                grid-template-columns: minmax(105px, 38%) 1fr;
+                gap:8px;
+                padding:8px 4px;
+                border-bottom:1px solid var(--border);
+                text-align:right;
+                overflow-wrap:anywhere;
+            }
+            table tbody td::before {
+                color:var(--muted);
+                font-weight:700;
+                text-align:left;
+            }
+            table tbody td:nth-child(1)::before { content:'Producto'; }
+            table tbody td:nth-child(2)::before { content:'Cantidad'; }
+            table tbody td:nth-child(3)::before { content:'Venta'; }
+            table tbody td:nth-child(4)::before { content:'Compra'; }
+            table tbody td:nth-child(5)::before { content:'Total venta'; }
+            table tbody td:nth-child(6)::before { content:'Ganancia'; }
+            table tbody td:nth-child(7)::before { content:'Categoría'; }
+            table tbody td:nth-child(8)::before { content:'Estado'; }
+            table tbody td:nth-child(9)::before { content:'Proveedor'; }
+            table tbody td:nth-child(10)::before { content:'Vencimiento'; }
+            table tbody td:last-child {
+                display:flex;
+                padding-top:12px;
+                border-bottom:0;
+                text-align:left;
+            }
+            table tbody td:last-child::before { content:'Acciones'; flex:0 0 105px; }
+            .acciones { flex:1; justify-content:flex-end; }
+            .acciones button { min-width:0; padding:9px 8px; }
+            .tabla-simple tbody td:nth-child(1)::before { content:'Proveedor'; }
+            .tabla-simple tbody td:nth-child(2)::before { content:'Productos'; }
+            .tabla-simple tbody td:nth-child(3)::before { content:'Unidades'; }
+            .tabla-simple tbody td:nth-child(4)::before { content:'Costo compra'; }
+            .tabla-simple tbody td:nth-child(5)::before { content:'Venta estimada'; }
+            .tabla-simple tbody td:nth-child(6)::before { content:'Ganancia'; }
+            .tabla-simple tbody td:nth-child(7)::before { content:'Margen'; }
+        }
+
+        /* Herramientas avanzadas: ventas, seguridad y proveedores */
+        .panel-ventas-avanzadas { display:grid; grid-template-columns:1.15fr 1fr; gap:18px; align-items:start; }
+        .carrito-lista { min-height:90px; margin:12px 0; padding:0; list-style:none; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+        .carrito-lista li { display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border); }
+        .carrito-lista li:last-child { border-bottom:0; }
+        .carrito-total { display:flex; justify-content:space-between; gap:10px; padding:12px 0; font-size:1.15rem; }
+        .form-venta { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; align-items:end; }
+        .form-venta .campo { display:flex; flex-direction:column; gap:5px; }
+        .seguridad-box { display:flex; gap:10px; align-items:center; justify-content:space-between; padding:12px; margin-top:15px; border:1px solid var(--border); border-radius:10px; background:var(--bg); }
+        .proveedor-form { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+        .proveedor-form button { grid-column:1/-1; }
+        .btn-deshacer { background:linear-gradient(135deg,#5269a5,#315bea); color:white; }
+        @media (max-width:760px) { .panel-ventas-avanzadas { grid-template-columns:1fr; } .form-venta,.proveedor-form { grid-template-columns:1fr; } .carrito-lista li { grid-template-columns:1fr auto; } .carrito-lista li strong { grid-column:1/-1; } }
+
+        /* Adaptación reforzada para celulares */
+        .btn-compacto { padding:7px 10px; min-height:38px; }
+        .tabla-contenedor thead th { position:sticky; top:0; z-index:2; }
+
+        /* Mejoras adicionales de usabilidad, accesibilidad y adaptación móvil. */
+        .enlace-salto { position:fixed; left:12px; top:-60px; z-index:300; padding:10px 14px; background:var(--blue); color:white; border-radius:6px; transition:top .2s; }
+        .enlace-salto:focus { top:12px; }
+        .estado-conexion { display:inline-flex; align-items:center; gap:6px; font-size:.8rem; color:var(--muted); }
+        .estado-conexion::before { content:'●'; color:var(--green); }
+        .estado-conexion.sin-conexion::before { color:var(--orange); }
+        .campo-error { border-color:var(--red) !important; box-shadow:0 0 0 3px rgba(255,85,119,.16) !important; }
+        .texto-error-campo { color:var(--red); font-size:.78rem; margin-top:3px; }
+        .progreso-stock { height:6px; margin-top:5px; overflow:hidden; border-radius:8px; background:var(--border); }
+        .progreso-stock span { display:block; height:100%; border-radius:inherit; background:var(--green); }
+        .progreso-stock.bajo span { background:var(--orange); }
+        .progreso-stock.agotado span { background:var(--red); }
+        @media print { header,.nav-menu,.controles-superiores,.form-inventario,.modal,.menu-lateral,.capa-menu,button { display:none !important; } body { max-width:none; padding:0; background:white; color:#111; } .seccion-contenido { display:none !important; } #pestana-inventario { display:block !important; } table { min-width:0; } }
+        @media (max-width:520px) {
+            body { width:100%; max-width:none; padding:8px 8px 24px; overflow-x:hidden; }
+            header { margin-bottom:12px; padding:13px 12px; border-radius:14px; gap:12px; }
+            .encabezado-marca { min-width:0; }
+            h1 { font-size:1.2rem; white-space:nowrap; }
+            .btn-menu { min-width:42px; padding:9px 10px; }
+            header > div:last-child { display:grid !important; grid-template-columns:1fr; gap:8px; }
+            header > div:last-child button { width:100%; min-height:42px; }
+            .nav-menu { margin:0 -1px 14px; padding:5px; gap:4px; border-radius:11px; }
+            .nav-tab { flex:1 0 auto; min-height:44px; padding:10px 11px; font-size:.82rem; }
+            .resumen { grid-template-columns:1fr 1fr; gap:9px; margin-bottom:14px; }
+            .tarjeta { padding:14px 9px; border-radius:11px; }
+            .tarjeta strong { font-size:1.15rem; overflow-wrap:anywhere; }
+            .panel, .form-inventario, .grafico { padding:12px; margin-bottom:13px; border-radius:11px; }
+            .panel h2, .grafico h2 { font-size:1.05rem; margin-top:0; }
+            .form-inventario, .filtros, .form-ajuste, .form-venta, .proveedor-form { gap:10px; }
+            .form-inventario input, .form-inventario select, .filtros input, .filtros select,
+            .form-ajuste input, .form-ajuste select, .form-venta input, .form-venta select,
+            .proveedor-form input { width:100%; min-width:0; }
+            .form-inventario button, .form-ajuste button, .form-venta button, .proveedor-form button { width:100%; }
+            .seguridad-box { align-items:stretch; flex-direction:column; gap:8px; }
+            .seguridad-box button, .seguridad-box select { width:100%; max-width:none !important; }
+            table tbody td { grid-template-columns: minmax(88px, 34%) minmax(0, 1fr); font-size:.88rem; }
+            table tbody td:last-child { display:block; text-align:left; }
+            table tbody td:last-child::before { display:block; margin-bottom:8px; }
+            .acciones { justify-content:flex-start; gap:6px; }
+            .acciones button { flex:1 1 auto; min-width:0; padding:9px 6px; font-size:.78rem; }
+            .carrito-lista li { padding:9px; gap:7px; font-size:.88rem; }
+            .modal-contenido { padding:16px; max-height:92vh; overflow-y:auto; }
+            #notificacion { right:10px; bottom:10px; left:10px; text-align:center; }
+            canvas { height:210px !important; }
+        }
     </style>
 </head>
 <body>
-    <button class="btn-secundario tema" id="alternar-tema" type="button">🌙 Modo oscuro</button>
-    <h1>Gestor de Inventario</h1>
+    <a class="enlace-salto" href="#contenido-principal">Saltar al contenido</a>
 
-    <section class="resumen">
-        <div class="tarjeta">Productos<strong id="total-productos">0</strong></div>
-        <div class="tarjeta">Unidades<strong id="total-unidades">0</strong></div>
-        <div class="tarjeta">Valor del inventario<strong id="valor-inventario">$0.00</strong></div>
-        <div class="tarjeta">Alertas de stock<strong id="total-alertas">0</strong></div>
-    </section>
-
-    <form id="formulario-producto" class="form-inventario">
-        <input type="hidden" id="indice-edicion" value="-1">
-        <input type="text" id="nombre" placeholder="Nombre del producto" required>
-        <input type="number" id="cantidad" placeholder="Cantidad" min="0" required>
-        <input type="number" id="precio" placeholder="Precio de venta ($)" min="0" step="0.01" required>
-        <input type="number" id="precio-compra" placeholder="Precio de compra ($)" min="0" step="0.01" value="0" required>
-        <input type="number" id="stock-minimo" placeholder="Stock mínimo" min="0" value="0" required>
-        <select id="categoria" required>
-            <option value="" disabled selected>Categoría</option><option>Alimentos</option><option>Bebidas</option><option>Limpieza</option><option>Otros</option>
-        </select>
-        <select id="estado" required>
-            <option value="" disabled selected>Estado</option><option>Disponible</option><option>Agotado</option><option>Pendiente</option>
-        </select>
-        <input type="text" id="proveedor" placeholder="Proveedor" required>
-        <input type="date" id="vencimiento" title="Fecha de vencimiento">
-        <button class="btn-principal" type="submit" id="boton-formulario">Agregar producto</button>
-        <button class="btn-secundario oculto" type="button" id="cancelar-edicion">Cancelar edición</button>
-    </form>
-
-    <section class="panel">
-        <div class="filtros">
-            <input type="search" id="buscador" placeholder="Buscar por producto o proveedor...">
-            <select id="filtro-categoria"><option value="">Todas las categorías</option><option>Alimentos</option><option>Bebidas</option><option>Limpieza</option><option>Otros</option></select>
-            <select id="filtro-estado"><option value="">Todos los estados</option><option>Disponible</option><option>Agotado</option><option>Pendiente</option></select>
-            <select id="filtro-stock"><option value="">Todo el stock</option><option value="bajo">Stock bajo</option><option value="agotado">Agotados</option><option value="vencido">Vencidos</option><option value="proximo">Vencen en 30 días</option></select>
-            <button class="btn-secundario" id="limpiar-filtros" type="button">Limpiar filtros</button>
+    <!-- Encabezado principal y accesos rápidos -->
+    <header>
+        <div class="encabezado-marca">
+            <button class="btn-menu" id="btn-menu-lateral" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+            <h1 data-i18n="tituloApp">INVENTIFY</h1>
         </div>
-    </section>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="btn-secundario btn-pdf" id="btn-compras-pdf" type="button" data-i18n="btnOrdenCompra">🛒 Orden de compra</button>
+            <button class="btn-pdf" id="btn-reporte-pdf" type="button" data-i18n="btnReportePdf">📄 Reporte PDF</button>
+            <button class="btn-pdf" id="btn-informe-mensual" type="button">📅 Informe mensual</button>
+                            <button class="btn-editar admin-acceso" id="btn-zona-admin" type="button" title="Pide una contraseña para entrar a la zona de administración">🔐 Administrador</button>
+            <span id="estado-conexion" class="estado-conexion" aria-live="polite">En línea</span>
+        </div>
+    </header>
 
-    <div class="tabla-contenedor">
-        <table>
-            <thead><tr>
-                <th data-orden="nombre">Producto ↕</th><th data-orden="cantidad">Cantidad ↕</th><th data-orden="precio">Venta ↕</th><th>Compra</th><th>Total</th><th>Ganancia</th><th>Categoría</th><th>Estado</th><th>Proveedor</th><th>Vencimiento</th><th>Acciones</th>
-            </tr></thead>
-            <tbody id="lista-productos"></tbody>
-        </table>
-    </div>
+    <div class="capa-menu" id="capa-menu"></div>
+    
+    <!-- MENÚ LATERAL MEJORADO DE USUARIO Y SOPORTE -->
+    <aside class="menu-lateral" id="menu-lateral" aria-label="Menú de usuario, guía y soporte">
+        <div class="menu-lateral-cabecera">
+            <h2>👤 Menú de Usuario</h2>
+            <button class="btn-cerrar-menu" id="btn-cerrar-menu" type="button" aria-label="Cerrar menú">×</button>
+        </div>
 
-    <section class="graficos">
-        <div class="grafico"><h2>Productos por categoría</h2><canvas id="grafico-categoria" aria-label="Gráfico de productos por categoría"></canvas></div>
-        <div class="grafico"><h2>Productos por estado</h2><canvas id="grafico-estado" aria-label="Gráfico de productos por estado"></canvas></div>
-    </section>
+        <!-- Pestañas internas del Menú Lateral -->
+        <nav class="tabs-menu-lateral">
+            <button class="tab-btn-lateral activa" onclick="mostrarPestanaLateral('tab-perfil', this)">Perfil</button>
+            <button class="tab-btn-lateral" onclick="mostrarPestanaLateral('tab-soporte', this)">🆘 Soporte</button>
+            <button class="tab-btn-lateral" onclick="mostrarPestanaLateral('tab-guia', this)">📘 Guía</button>
+        </nav>
 
-    <section class="panel movimientos">
-        <h2>Historial de ventas</h2>
-        <p class="nota">Ventas registradas individualmente o mediante salidas.</p>
-        <ul id="lista-ventas"><li class="nota">Todavía no hay ventas.</li></ul>
-    </section>
+        <!-- PESTAÑA 1: PERFIL Y DETALLES DE USUARIO -->
+        <div id="tab-perfil" class="contenido-tab-lateral">
+            <div class="perfil-usuario">
+                <div class="avatar-usuario" id="avatar-iniciales" title="Cambiar foto de perfil" role="button" tabindex="0">U</div>
+                <div>
+                    <strong id="usuario-activo">Usuario Activo</strong>
+                    <span class="nota" id="rol-usuario">No identificado</span><br>
+                    <span class="etiqueta-rol" id="etiqueta-rol">Sin identificar</span>
+                    <div class="datos-usuario" id="datos-usuario">
+                        <span id="correo-usuario">📧 Sin correo</span>
+                        <span id="telefono-usuario">📞 Sin teléfono</span>
+                    </div>
+                    <label class="selector-foto">📷 Cambiar foto
+                        <input type="file" id="foto-usuario" accept="image/*">
+                    </label>
+                    <button class="enlace-acceso" id="btn-identificarse" type="button">🔑 Identificarse</button>
+                    <button class="enlace-acceso" id="btn-cerrar-sesion" type="button">🚪 Cerrar sesión</button>
+                    <button class="enlace-acceso oculto" id="btn-quitar-foto" type="button">🗑️ Quitar foto</button>
+                </div>
+            </div>
 
-    <section class="panel movimientos">
-        <h2>Registro de movimientos</h2>
-        <p class="nota">Las entradas, salidas y ajustes quedan guardados automáticamente.</p>
-        <ul id="lista-movimientos"><li class="nota">Todavía no hay movimientos.</li></ul>
-    </section>
+            <div class="progreso-perfil" aria-live="polite">
+                <div class="progreso-perfil-cabecera"><strong>Perfil completado</strong><span id="porcentaje-perfil">0%</span></div>
+                <div class="barra-meta"><span id="barra-perfil"></span></div>
+                <small id="ayuda-perfil" class="nota">Identifícate para completar tu perfil.</small>
+            </div>
 
-    <div id="notificacion" role="status" aria-live="polite"></div>
+            <div class="plan-usuario" aria-live="polite">
+                <div class="plan-usuario-cabecera"><strong>✨ Tu plan</strong><span id="etiqueta-plan-usuario" class="etiqueta-plan">GRATIS</span></div>
+                <p id="detalle-plan-usuario">Plan gratuito: hasta 30 productos y funciones esenciales.</p>
+                <button class="btn-editar" id="btn-ver-plan-pro" type="button">Conocer INVENTIFY Pro</button>
+            </div>
 
-    <div id="modal-venta" class="modal oculto" role="dialog" aria-modal="true" aria-labelledby="titulo-venta">
-        <div class="modal-contenido">
-            <h2 id="titulo-venta">Registrar venta</h2>
-            <p id="detalle-venta" class="nota"></p>
-            <label for="cantidad-venta">Cantidad de unidades</label>
-            <input type="number" id="cantidad-venta" min="1" step="1" value="1">
-            <div class="modal-acciones">
-                <button class="btn-secundario" type="button" id="cancelar-venta">Cancelar</button>
-                <button class="btn-vender" type="button" id="confirmar-venta">Confirmar venta</button>
+            <div class="accesos-usuario">
+                <strong>⚡ Accesos rápidos</strong>
+                <div class="accesos-usuario-botones">
+                    <button class="btn-secundario" type="button" data-acceso-usuario="pestana-dashboard">📊 Panel</button>
+                    <button class="btn-secundario" type="button" data-acceso-usuario="pestana-inventario">📦 Inventario</button>
+                    <button class="btn-secundario" type="button" data-acceso-usuario="pestana-ventas">🛒 Ventas</button>
+                    <button class="btn-secundario" type="button" data-acceso-usuario="pestana-config">⚙️ Ajustes</button>
+                </div>
+            </div>
+
+            <div class="info-sistema-box">
+                <div><span>Estado de Sesión:</span><strong style="color:var(--green)">● Activa</strong></div>
+                <div><span>Última conexión:</span><span id="info-ultimo-acceso">Hoy</span></div>
+                <div><span>Versión del sistema:</span><span>v2.5 Pro</span></div>
+            </div>
+
+            <div class="info-sistema-box" style="margin-top: 10px;">
+                <strong style="display:block; margin-bottom: 6px;">📊 Resumen Rápido</strong>
+                <div><span>Total Productos:</span><strong id="menu-total-prod">0</strong></div>
+                <div><span>Alertas Activas:</span><strong id="menu-total-alertas" style="color:var(--red)">0</strong></div>
             </div>
         </div>
+
+        <!-- PESTAÑA 2: AYUDA Y SOPORTE TÉCNICO -->
+        <div id="tab-soporte" class="contenido-tab-lateral" style="display:none;">
+            <div class="seccion-soporte">
+                                    <h3 data-i18n="faqTitulo">❓ Preguntas frecuentes</h3>
+                <details class="faq-item">
+                    <summary>¿Cómo recupero una copia de seguridad?</summary>
+                    <p>Ve a Configuración -> Copia de seguridad y selecciona "Importar datos" eligiendo tu archivo .json previo.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>¿Por qué no veo la Zona de Administración?</summary>
+                    <p>Debes iniciar sesión con una cuenta que tenga rol de Administrador usando el botón 🔐 Administrador.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>¿Cómo genero la Orden de Compra?</summary>
+                    <p>Haz clic en "🛒 Orden de compra" en la barra superior. Se incluirán automáticamente los productos con stock bajo el mínimo.</p>
+                </details>
+
+                <div class="chat-ayuda">
+                    <h3 data-i18n="asistenteTitulo">🤖 Asistente de inventario</h3>
+                    <p class="nota">Pregúntame sobre productos, stock, ventas, ajustes, reportes, categorías, copias de seguridad o configuración del inventario.</p>
+                    <div id="chat-mensajes" class="chat-mensajes" aria-live="polite">
+                        <div class="mensaje-chat ia">¡Hola! Soy tu asistente de ayuda. ¿Qué necesitas saber?</div>
+                    </div>
+                    <form id="form-chat-ayuda" class="form-chat">
+                        <input id="entrada-chat" type="text" placeholder="Escribe tu pregunta..." autocomplete="off" maxlength="300" required>
+                        <button type="submit">Enviar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: GUÍA COMPLETA DE USO -->
+        <div id="tab-guia" class="contenido-tab-lateral" style="display:none;">
+            <section class="guia">
+                <h2 data-i18n="guiaTitulo">📘 Guía de uso sencillo</h2>
+                <p class="nota">Piensa en esta aplicación como una libreta digital para tu tienda. Ve despacio: elige una pestaña, lee lo que aparece y pulsa un botón cada vez. No necesitas saber de computadoras para usarla.</p>
+
+                <h3>📊 Panel General</h3>
+                <div class="guia-funcion"><strong>¿Qué veo aquí?</strong><p>Es como el tablero de una tienda. Mira cuántos productos tienes, cuántas unidades quedan, cuánto dinero valen y qué necesita atención.</p></div>
+                <div class="guia-funcion"><strong>Gráficas</strong><p>Son dibujos que explican tus datos. Si no aparecen, no te preocupes: la aplicación sigue funcionando y puedes usar las tablas.</p></div>
+                <div class="guia-funcion"><strong>Balance y análisis</strong><p>El balance suma tus ventas. El análisis te dice cosas sencillas, como “hay que comprar” o “revisa un vencimiento”.</p></div>
+
+                <h3>📦 Inventario: guardar un producto</h3>
+                <div class="guia-funcion"><strong>Agregar</strong><p>Escribe cada dato en su casilla. La cantidad es lo que tienes; “Compra” es lo que pagaste y “Venta” es lo que cobrarás. Después pulsa <b>Agregar producto</b>.</p></div>
+                <div class="guia-funcion"><strong>Cambiar o borrar</strong><p>Pulsa <b>Editar</b> para corregir. Para borrar, la aplicación te preguntará dos veces para evitar errores.</p></div>
+                <div class="guia-funcion"><strong>Buscar y filtrar</strong><p>Escribe una palabra en Buscar. También puedes elegir categoría, estado o “Stock bajo”.</p></div>
+                <div class="guia-funcion"><strong>Vender</strong><p>Pulsa <b>Vender</b>. Se quitará una unidad, se guardará la venta y se calculará la ganancia. Cuando llegue a cero, el estado será <b>Agotado</b>.</p></div>
+
+                <h3>↔️ Ajustes y devoluciones</h3>
+                <div class="guia-funcion"><strong>¿Entró o salió mercancía?</strong><p>Elige el producto, escribe cuántas unidades y explica el motivo. Usa <b>Entrada</b> para una devolución o mercancía nueva, y <b>Salida</b> para una pérdida o corrección.</p></div>
+
+                <h3>🛒 Compras y reportes</h3>
+                <div class="guia-funcion"><strong>Orden de compra</strong><p>Pulsa el botón del carrito. Se prepara una lista con los productos que tienen poco stock o están agotados.</p></div>
+                <div class="guia-funcion"><strong>Reporte e informe mensual</strong><p>Estos botones preparan un archivo para guardar o compartir. El informe mensual incluye el total de ventas.</p></div>
+
+                <h3>🏷️ Proveedores</h3>
+                <div class="guia-funcion"><strong>Comparar proveedores</strong><p>Aquí puedes ver qué proveedor te cuesta menos y cuál te deja más ganancia. Los resultados se calculan con el precio de compra, el precio de venta y las unidades registradas.</p></div>
+                <div class="guia-funcion"><strong>Registrar un proveedor</strong><p>Completa nombre, teléfono, correo, dirección, días de entrega y notas. Después pulsa <b>Guardar proveedor</b>. Mantén estos datos actualizados para localizar rápidamente a quién comprar.</p></div>
+
+                <h3>🛒 Ventas y devoluciones</h3>
+                <div class="guia-funcion"><strong>Editar o devolver una venta</strong><p>En <b>Historial Ventas</b> puedes revisar las ventas registradas y pulsar <b>Devolver</b> cuando un cliente regrese un producto. La unidad vuelve al inventario y el movimiento queda registrado.</p></div>
+                <div class="guia-funcion"><strong>Carrito y comprobante</strong><p>Agrega varios productos al carrito, aplica descuentos y confirma la venta. Luego puedes imprimir el comprobante de la última venta o exportar el historial en CSV.</p></div>
+
+                <h3>📄 Reportes</h3>
+                <div class="guia-funcion"><strong>Reportes de inventario y compras</strong><p>Usa <b>Reporte PDF</b> para resumir el inventario y <b>Orden de compra</b> para listar productos con stock bajo. También puedes generar el <b>Informe mensual</b> con ventas, ingresos, ganancias, gastos y el producto más vendido.</p></div>
+
+                <h3>🔔 Avisos de inventario</h3>
+                <div class="guia-funcion"><strong>Stock bajo y vencimientos</strong><p>El Panel General muestra alertas cuando un producto llega al stock mínimo. En Inventario puedes filtrar productos agotados, vencidos o próximos a vencer para actuar a tiempo.</p></div>
+
+                <h3>🧾 Historial de cambios</h3>
+                <div class="guia-funcion"><strong>Movimientos y responsables</strong><p>La pestaña <b>Movimientos</b> registra ventas, entradas, salidas, devoluciones y eliminaciones con fecha y usuario. Así puedes revisar qué ocurrió con el inventario.</p></div>
+
+                <h3>🔐 Usuarios y seguridad</h3>
+                <div class="guia-funcion"><strong>Inicio de sesión y administrador</strong><p>En <b>Identificarse</b> guarda el nombre, correo, teléfono y rol del usuario. El rol de Administrador permite acceder a gastos, metas, empleados y copias de seguridad. No compartas la contraseña y cierra sesión si utilizas un equipo compartido.</p></div>
+                <div class="guia-funcion"><strong>Bloqueo automático</strong><p>En Configuración puedes elegir un bloqueo de 5, 15 o 30 minutos para proteger la zona administrativa cuando no haya actividad.</p></div>
+
+                <h3>🌐 Idiomas</h3>
+                <div class="guia-funcion"><strong>Cambiar el idioma</strong><p>En Configuración selecciona Español, English o Français. La preferencia se guarda automáticamente y se aplica a los menús, formularios, filtros y textos principales.</p></div>
+
+                <h3>⚙️ Configuración y copias</h3>
+                <div class="guia-funcion"><strong>Moneda, idioma y apariencia</strong><p>Elige tu moneda, cambia el idioma y activa o desactiva el modo oscuro. Tus preferencias se guardan automáticamente.</p></div>
+                <div class="guia-funcion"><strong>Importar y exportar datos</strong><p>El administrador puede pulsar <b>Exportar copia</b> para guardar los datos en un archivo JSON. Antes de importar, conserva una copia actual; después pulsa <b>Importar datos</b>, elige el archivo y confirma el reemplazo.</p></div>
+                <div class="guia-funcion"><strong>Copias automáticas</strong><p>La aplicación guarda copias recientes después de operaciones importantes. En Configuración puedes restaurar una copia si necesitas recuperar información anterior.</p></div>
+                <div class="guia-funcion"><strong>¿Necesito ayuda?</strong><p>Si algo no queda claro, abre la pestaña <b>Soporte</b> y pregunta al asistente. También encontrarás preguntas frecuentes.</p></div>
+            </section>
+        </div>
+    </aside>
+
+    <!-- NAVEGACIÓN PRINCIPAL: cambia entre las áreas del inventario -->
+    <nav class="nav-menu" aria-label="Secciones principales">
+        <button class="nav-tab activa" onclick="cambiarPestana('pestana-dashboard', this)" data-i18n="menuDashboard">📊 Panel General</button>
+        <button class="nav-tab" onclick="cambiarPestana('pestana-inventario', this)" data-i18n="menuInventario">📦 Inventario</button>
+        <button class="nav-tab" onclick="cambiarPestana('pestana-ventas', this)" data-i18n="menuVentas">🛒 Historial Ventas</button>
+        <button class="nav-tab" onclick="cambiarPestana('pestana-movimientos', this)" data-i18n="menuMovimientos">📋 Movimientos</button>
+        <button class="nav-tab" onclick="cambiarPestana('pestana-proveedores', this)">🏷️ Proveedores</button>
+        <button class="nav-tab" onclick="cambiarPestana('pestana-config', this)" data-i18n="menuConfig">⚙️ Configuración</button>
+    </nav>
+
+    <!-- Contenedor principal para navegación por teclado y lectores de pantalla. -->
+    <main id="contenido-principal">
+    <!-- PESTAÑA DASHBOARD -->
+    <div id="pestana-dashboard" class="seccion-contenido activa">
+        <section class="resumen">
+            <div class="tarjeta"><span data-i18n="tarjetaProductos">Productos</span><strong id="total-productos">0</strong></div>
+            <div class="tarjeta"><span data-i18n="tarjetaUnidades">Unidades</span><strong id="total-unidades">0</strong></div>
+            <div class="tarjeta"><span data-i18n="tarjetaValor">Valor Inventario</span><strong id="valor-inventario">$0.00</strong></div>
+            <div class="tarjeta ganancia"><span data-i18n="tarjetaGananciaEst">Ganancia estimada</span><strong id="total-ganancia-estimada">$0.00</strong></div>
+            <div class="tarjeta"><span data-i18n="tarjetaAlertas">Alertas stock</span><strong id="total-alertas">0</strong></div>
+        </section>
+
+        <section class="panel">
+            <h2 data-i18n="balanceTitulo">💰 Balance Financiero y Ganancias Realizadas</h2>
+            <p class="nota" data-i18n="balanceNota">Basado en el historial de ventas registradas.</p>
+            <div style="display:flex; gap:15px; margin-top:10px; flex-wrap:wrap;">
+                <div class="tarjeta" style="flex:1;"><span data-i18n="totalVentas">Total Ingresos por Ventas</span>: <strong id="balance-total-ventas">$0.00</strong></div>
+                <div class="tarjeta ganancia" style="flex:1;"><span data-i18n="gananciaNeta">Ganancia Neta Realizada</span>: <strong id="balance-total-ganancia">$0.00</strong></div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>🧠 Análisis inteligente</h2>
+            <p class="nota">Recomendaciones automáticas basadas en tu inventario, ventas y fechas de vencimiento.</p>
+            <div id="analisis-inteligente" class="analisis-inteligente"></div>
+        </section>
+
+        <section class="graficos">
+            <div class="grafico"><h2 data-i18n="grafCategoria">Productos por categoría</h2><canvas id="grafico-categoria"></canvas></div>
+            <div class="grafico"><h2 data-i18n="grafEstado">Productos por estado</h2><canvas id="grafico-estado"></canvas></div>
+            <div class="grafico"><h2>📈 Ventas por día</h2><canvas id="grafico-ventas"></canvas></div>
+            <div class="grafico"><h2>💹 Ingresos y ganancias</h2><canvas id="grafico-ganancias"></canvas></div>
+        </section>
     </div>
 
+    <!-- PESTAÑA INVENTARIO -->
+    <div id="pestana-inventario" class="seccion-contenido">
+        <form id="formulario-producto" class="form-inventario">
+            <input type="hidden" id="indice-edicion" value="-1">
+            <input type="text" id="nombre" data-i18n-ph="phNombre" placeholder="Nombre del producto" required>
+            <input type="text" id="codigo-barras" placeholder="Código de barras (opcional)" inputmode="numeric">
+            <input type="number" id="cantidad" data-i18n-ph="phCantidad" placeholder="Cantidad" min="0" required>
+            <input type="number" id="precio" data-i18n-ph="phPrecioVenta" placeholder="Precio de venta" min="0" step="0.01" required>
+            <input type="number" id="precio-compra" data-i18n-ph="phPrecioCompra" placeholder="Precio de compra (Costo)" min="0" step="0.01" value="0" required>
+            <input type="number" id="descuento-defecto" placeholder="Descuento habitual (%)" min="0" max="100" step="0.01" value="0">
+            <input type="number" id="stock-minimo" data-i18n-ph="phStockMinimo" placeholder="Stock mínimo" min="0" value="0" required>
+            <div class="campo-categoria">
+                <select id="categoria" required>
+                    <option value="" disabled selected data-i18n="optCategoria">Categoría</option>
+                </select>
+                <div class="nueva-categoria">
+                    <input type="text" id="nueva-categoria" placeholder="Nueva categoría">
+                    <button class="btn-secundario" type="button" id="agregar-categoria">Agregar</button>
+                </div>
+            </div>
+            <select id="estado" required>
+                <option value="" disabled selected data-i18n="optEstado">Estado</option>
+                <option value="Disponible" data-i18n="estDisponible">Disponible</option>
+                <option value="Agotado" data-i18n="estAgotado">Agotado</option>
+                <option value="Pendiente" data-i18n="estPendiente">Pendiente</option>
+            </select>
+            <input type="text" id="proveedor" data-i18n-ph="phProveedor" placeholder="Proveedor" required>
+            <input type="date" id="vencimiento" title="Fecha de vencimiento">
+            <button class="btn-secundario" id="btn-imprimir-etiquetas" type="button">🖨️ Imprimir etiquetas</button>
+            <button class="btn-principal" type="submit" id="boton-formulario" data-i18n="btnAgregar">Agregar producto</button>
+            <button class="btn-secundario oculto" type="button" id="cancelar-edicion" data-i18n="btnCancelar">Cancelar edición</button>
+        </form>
+
+        <section class="panel">
+            <h2>↔️ Ajustes y devoluciones</h2>
+            <p class="nota">Agrega o descuenta unidades indicando el motivo. Las devoluciones se registran como entradas.</p>
+            <span class="ayuda-boton">Usa Entrada cuando recibas mercancía y Salida cuando se pierda o retire mercancía.</span>
+            <form id="formulario-ajuste" class="form-ajuste">
+                <div><label for="producto-ajuste">Producto</label><select id="producto-ajuste" required></select></div>
+                <div><label for="cantidad-ajuste">Unidades</label><input type="number" id="cantidad-ajuste" min="1" step="1" required></div>
+                <div><label for="motivo-ajuste">Motivo</label><input type="text" id="motivo-ajuste" placeholder="Devolución, pérdida, corrección..." required></div>
+                <div><label for="tipo-ajuste">Tipo</label><select id="tipo-ajuste"><option value="entrada">Entrada / devolución</option><option value="salida">Salida / pérdida</option></select></div>
+                <button class="btn-mov" type="submit">Guardar ajuste</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="filtros">
+                <input type="search" id="buscador" data-i18n-ph="phBuscar" placeholder="Buscar por producto, proveedor o código...">
+                <select id="filtro-categoria">
+                    <option value="" data-i18n="fTodasCat">Todas las categorías</option>
+                </select>
+                <select id="filtro-estado">
+                    <option value="" data-i18n="fTodosEst">Todos los estados</option>
+                    <option value="Disponible" data-i18n="estDisponible">Disponible</option>
+                    <option value="Agotado" data-i18n="estAgotado">Agotado</option>
+                    <option value="Pendiente" data-i18n="estPendiente">Pendiente</option>
+                </select>
+                <select id="filtro-stock">
+                    <option value="" data-i18n="fTodoStock">Todo el stock</option>
+                    <option value="bajo" data-i18n="fStockBajo">Stock bajo</option>
+                    <option value="agotado" data-i18n="fAgotados">Agotados</option>
+                    <option value="vencido" data-i18n="fVencidos">Vencidos</option>
+                    <option value="proximo" data-i18n="fProximos">Vencen en 30 días</option>
+                </select>
+                <button class="btn-secundario" id="limpiar-filtros" type="button" data-i18n="btnLimpiar">Limpiar filtros</button>
+            </div>
+        </section>
+
+        <div class="tabla-contenedor">
+            <table>
+                <thead><tr>
+                    <th data-orden="nombre" data-i18n="thProducto">Producto ↕</th>
+                    <th data-orden="cantidad" data-i18n="thCantidad">Cantidad ↕</th>
+                    <th data-orden="precio" data-i18n="thVenta">Venta ↕</th>
+                    <th data-orden="precioCompra" data-i18n="thCompra">Compra ↕</th>
+                    <th data-orden="totalVenta" data-i18n="thTotalVenta">Total Venta ↕</th>
+                    <th data-i18n="thGananciaEst">Ganancia Est.</th>
+                    <th data-i18n="thCategoria">Categoría</th>
+                    <th data-i18n="thEstado">Estado</th>
+                    <th data-i18n="thProveedor">Proveedor</th>
+                    <th data-i18n="thVencimiento">Vencimiento</th>
+                    <th data-i18n="thAcciones">Acciones</th>
+                </tr></thead>
+                <tbody id="lista-productos"></tbody>
+            </table>
+        </div>
+        <div id="paginacion-inventario" class="controles-superiores" aria-label="Paginación del inventario"></div>
+    </div>
+
+    <!-- PESTAÑA VENTAS -->
+    <div id="pestana-ventas" class="seccion-contenido">
+        <section class="panel panel-ventas-avanzadas">
+            <div>
+                <h2>🛒 Nueva venta</h2>
+                <p class="nota">Añade varios productos y confirma toda la venta en un solo paso.</p>
+                <form id="formulario-carrito" class="form-venta">
+                    <div class="campo"><label for="producto-carrito">Producto</label><select id="producto-carrito" required></select></div>
+                    <div class="campo"><label for="cantidad-carrito">Cantidad</label><input id="cantidad-carrito" type="number" min="1" value="1" required></div>
+                    <div class="campo"><label for="descuento-carrito">Descuento (%)</label><input id="descuento-carrito" type="number" min="0" max="100" step="0.01" value="0"></div>
+                    <button class="btn-editar" type="submit">Añadir</button>
+                </form>
+                <ul id="lista-carrito" class="carrito-lista"><li class="vacio">El carrito está vacío.</li></ul>
+                <div class="carrito-total"><span>Total</span><strong id="total-carrito">$0.00</strong></div>
+                <button id="btn-confirmar-carrito" class="btn-principal" type="button" disabled>✅ Confirmar venta</button>
+            </div>
+            <div>
+                <h2>⚡ Acciones rápidas</h2>
+                <p class="nota">Gestiona las ventas sin perder el control del stock.</p>
+                <div class="seguridad-box"><span>↩️ Última acción</span><button id="btn-deshacer" class="btn-deshacer" type="button" disabled>Deshacer</button></div>
+                <div class="seguridad-box"><span>🧾 Comprobante de la última venta</span><button id="btn-comprobante-venta" class="btn-secundario" type="button">Imprimir</button></div>
+                <div class="seguridad-box"><span>📤 Exportar ventas</span><button id="btn-exportar-ventas" class="btn-secundario" type="button">CSV</button></div>
+            </div>
+        </section>
+        <section class="panel movimientos">
+            <h2 data-i18n="histVentasTitulo">Historial de ventas</h2>
+            <p class="nota" data-i18n="histVentasNota">Registro de ventas procesadas en el sistema.</p>
+            <ul id="lista-ventas"></ul>
+            <div class="resumen-ventas" id="resumen-ventas">
+                <h3 data-i18n="resumenVentasTitulo">📈 Resumen de productos vendidos</h3>
+                <p id="producto-mas-vendido" class="nota"></p>
+                <p id="producto-menos-vendido" class="nota"></p>
+            </div>
+        </section>
+    </div>
+
+    <!-- PESTAÑA MOVIMIENTOS -->
+    <div id="pestana-movimientos" class="seccion-contenido">
+        <section class="panel movimientos">
+            <h2 data-i18n="histMovTitulo">Registro de movimientos</h2>
+            <p class="nota" data-i18n="histMovNota">Las entradas, salidas y ajustes quedan guardados automáticamente.</p>
+            <ul id="lista-movimientos"></ul>
+        </section>
+    </div>
+
+    <!-- PESTAÑA PROVEEDORES -->
+    <div id="pestana-proveedores" class="seccion-contenido">
+        <section class="panel">
+            <h2 data-i18n="proveedoresTitulo">🏷️ Comparativa de proveedores</h2>
+            <p class="nota" data-i18n="proveedoresNota">Consulta los costos registrados por proveedor y descubre cuál resulta más rentable según el margen estimado.</p>
+            <div class="tabla-contenedor">
+                <table class="tabla-simple">
+                    <thead><tr>
+                        <th>Proveedor</th>
+                        <th>Productos</th>
+                        <th>Unidades</th>
+                        <th>Costo de compra</th>
+                        <th>Venta estimada</th>
+                        <th>Ganancia estimada</th>
+                        <th>Margen</th>
+                    </tr></thead>
+                    <tbody id="lista-proveedores"></tbody>
+                </table>
+            </div>
+            <div id="proveedor-recomendado" class="recomendacion exito-analisis" style="margin-top:15px;"></div>
+            <form id="formulario-proveedor" class="proveedor-form">
+                <input id="nuevo-proveedor-nombre" type="text" placeholder="Nombre del proveedor" required>
+                <input id="nuevo-proveedor-telefono" type="tel" placeholder="Teléfono">
+                <input id="nuevo-proveedor-correo" type="email" placeholder="Correo electrónico">
+                <input id="nuevo-proveedor-direccion" type="text" placeholder="Dirección">
+                <input id="nuevo-proveedor-entrega" type="number" min="0" placeholder="Días de entrega">
+                <input id="nuevo-proveedor-notas" type="text" placeholder="Notas">
+                <button class="btn-principal" type="submit">Guardar proveedor</button>
+            </form>
+        </section>
+    </div>
+
+    <!-- PESTAÑA CONFIGURACIÓN -->
+    <div id="pestana-config" class="seccion-contenido">
+        <section class="panel">
+            <h2 data-i18n="cfgTitulo">Ajustes Generales</h2>
+            <p id="estado-guardado" class="nota" role="status">✅ Datos guardados</p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:15px; margin-top:15px;">
+                <div>
+                    <label style="font-weight:600; display:block; margin-bottom:5px;" data-i18n="lblMoneda">Moneda principal:</label>
+                    <select id="selector-moneda"></select>
+                </div>
+                <div>
+                    <label style="font-weight:600; display:block; margin-bottom:5px;" data-i18n="lblIdioma">Idioma de la app:</label>
+                    <select id="selector-idioma">
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="en">🇬🇧 English</option>
+                        <option value="fr">🇫🇷 Français</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight:600; display:block; margin-bottom:5px;" data-i18n="lblTema">Apariencia visual:</label>
+                    <button class="btn-secundario tema" id="alternar-tema" type="button" style="width:100%;" data-i18n="btnModoOscuro">🌙 Modo oscuro</button>
+                </div>
+                <div>
+                    <label style="font-weight:600; display:block; margin-bottom:5px;">Zona horaria:</label>
+                    <select id="selector-zona-horaria"></select>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel admin-solo">
+            <h2>🛠️ Administración y finanzas</h2>
+            <p class="nota">Esta información solo está disponible para el administrador.</p>
+            <div class="admin-grid">
+                <div class="indicador-financiero"><span>Ganancia real</span><strong id="ganancia-real">$0.00</strong></div>
+                <div class="indicador-financiero"><span>Gastos registrados</span><strong id="total-gastos">$0.00</strong></div>
+                <div class="indicador-financiero"><span>Ventas del día</span><strong id="ventas-hoy">$0.00</strong></div>
+                <div class="indicador-financiero"><span>Progreso de meta</span><strong id="progreso-meta">0%</strong></div>
+            </div>
+            <form id="formulario-gasto" class="form-ajuste" style="margin-top:15px;">
+                <input id="gasto-descripcion" type="text" placeholder="Descripción del gasto" required>
+                <input id="gasto-monto" type="number" min="0" step="0.01" placeholder="Monto" required>
+                <select id="gasto-tipo"><option>Operativo</option><option>Salario</option><option>Transporte</option><option>Otro</option></select>
+                <button class="btn-eliminar" type="submit">Registrar gasto</button>
+            </form>
+            <form id="formulario-meta" class="form-ajuste" style="margin-top:15px;">
+                <input id="meta-monto" type="number" min="0" step="0.01" placeholder="Meta mensual de ventas" required>
+                <button class="btn-principal" type="submit">Guardar meta</button>
+            </form>
+            <form id="formulario-empleado" class="form-ajuste" style="margin-top:15px;">
+                <input id="empleado-usuario" type="text" placeholder="Usuario del empleado" required>
+                <input id="empleado-clave" type="password" minlength="4" placeholder="Contraseña" required>
+                <button class="btn-editar" type="submit">Crear empleado</button>
+            </form>
+            <div style="margin-top:15px;">
+                <div class="barra-meta"><span id="barra-meta-progreso"></span></div>
+            </div>
+        </section>
+
+        <section class="panel admin-solo">
+            <h2>🏆 Logros del negocio</h2>
+            <div id="lista-logros" class="analisis-inteligente"></div>
+        </section>
+
+        <section class="panel admin-solo">
+            <h2 data-i18n="cfgCopiaTitulo">Copia de Seguridad y Datos</h2>
+            <p class="nota" data-i18n="cfgCopiaNota">Guarda un archivo de respaldo o restaura tu información en otro dispositivo.</p>
+            <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
+                <button class="btn-secundario" id="btn-exportar" type="button" data-i18n="btnExportar">📥 Exportar copia de seguridad</button>
+                <button class="btn-secundario" id="btn-importar" type="button" data-i18n="btnImportar">📤 Importar datos</button>
+                <input type="file" id="archivo-importar" accept=".json" class="oculto">
+            </div>
+            <div class="lista-copias">
+                <strong>🕘 Copias automáticas recientes</strong>
+                <ul id="lista-copias-automaticas"></ul>
+            </div>
+            <div class="seguridad-box">
+                <span>🔒 Bloqueo automático de administración</span>
+                <select id="selector-bloqueo" style="max-width:180px"><option value="0">Desactivado</option><option value="5">5 minutos</option><option value="15">15 minutos</option><option value="30">30 minutos</option></select>
+            </div>
+        </section>
+    </div>
+    </main>
+
+    <!-- NOTIFICACIONES -->
+    <div id="notificacion" role="status" aria-live="polite"></div>
+    <div id="modal-bienvenida" class="modal oculto" role="dialog" aria-modal="true">
+        <div class="modal-contenido">
+            <h2>👋 ¡Bienvenido a INVENTIFY!</h2>
+            <p class="texto-confirmacion">Tu espacio para organizar el inventario, controlar existencias, registrar ventas y conocer tus ganancias.</p>
+            <div class="recomendacion exito-analisis" style="text-align:left; margin:14px 0;">
+                <strong>🚀 Todo listo para comenzar</strong>
+                <span>Agrega tu primer producto desde <b>Inventario</b> y explora las pestañas de Panel General, Ventas, Movimientos, Proveedores y Configuración.</span>
+            </div>
+            <p id="mensaje-motivador" class="nota" aria-live="polite"></p>
+            <div class="modal-acciones"><button class="btn-principal" id="btn-comenzar" type="button">Comenzar</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE ACCESO / LOGIN -->
+    <div id="modal-acceso" class="modal oculto" role="dialog" aria-modal="true">
+        <div class="modal-contenido">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                <h2 id="titulo-acceso">Iniciar sesión</h2>
+                <button class="btn-secundario" id="btn-cerrar-acceso" type="button" aria-label="Cerrar ventana">✕</button>
+            </div>
+            <p class="nota" id="descripcion-acceso">Accede a tu gestor de inventario.</p>
+            <form id="formulario-acceso">
+                <label for="usuario-acceso">Nombre completo</label>
+                <input type="text" id="usuario-acceso" autocomplete="name" required maxlength="60">
+                <label for="correo-acceso">Correo electrónico</label>
+                <input type="email" id="correo-acceso" autocomplete="email" required maxlength="100">
+                <label for="telefono-acceso">Teléfono</label>
+                <input type="tel" id="telefono-acceso" autocomplete="tel" maxlength="25" placeholder="Opcional">
+                <label for="rol-acceso">Rol</label>
+                <select id="rol-acceso">
+                    <option value="Usuario">Usuario</option>
+                    <option value="Administrador">Administrador</option>
+                </select>
+                                    <label for="clave-acceso">Contraseña</label>
+                <input type="password" id="clave-acceso" autocomplete="current-password" required maxlength="40">
+                <span class="ayuda-boton">La contraseña protege las funciones de administrador en este dispositivo.</span>
+                <p class="mensaje-acceso" id="mensaje-acceso"></p>
+                <div class="modal-acciones">
+                    <button class="btn-principal" type="submit">Ingresar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE INTERACCIÓN DEL MENÚ LATERAL Y SOPORTE -->
     <script>
-        const formulario = document.getElementById('formulario-producto');
-        const listaProductos = document.getElementById('lista-productos');
-        const movimientosEl = document.getElementById('lista-movimientos');
-        const ventasEl = document.getElementById('lista-ventas');
-        const leerAlmacenamiento = clave => {
-            try { return localStorage.getItem(clave); } catch { return null; }
-        };
-        const leerListaGuardada = clave => {
-            try {
-                const datos = JSON.parse(leerAlmacenamiento(clave) || '[]');
-                return Array.isArray(datos) ? datos : [];
-            } catch {
-                return [];
+        if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+
+        // Cambiar pestañas dentro del Menú Lateral
+        function mostrarPestanaLateral(tabId, btnElement) {
+            document.querySelectorAll('.contenido-tab-lateral').forEach(tab => tab.style.display = 'none');
+            document.querySelectorAll('.tab-btn-lateral').forEach(btn => btn.classList.remove('activa'));
+            
+            document.getElementById(tabId).style.display = 'block';
+            btnElement.classList.add('activa');
+        }
+
+        // Sincronizar datos resumidos al abrir menú lateral
+        document.getElementById('btn-menu-lateral').addEventListener('click', () => {
+            document.getElementById('menu-lateral').classList.add('abierto');
+            document.getElementById('capa-menu').classList.add('visible');
+            document.getElementById('btn-menu-lateral').setAttribute('aria-expanded', 'true');
+
+            // Actualizar datos compactos en menú
+            const prod = document.getElementById('total-productos')?.innerText || '0';
+            const alert = document.getElementById('total-alertas')?.innerText || '0';
+            document.getElementById('menu-total-prod').innerText = prod;
+            document.getElementById('menu-total-alertas').innerText = alert;
+
+            // Mantener la foto guardada al abrir nuevamente el menú.
+            const datosGuardados = JSON.parse(localStorage.getItem('datosUsuarioInventario') || 'null');
+            if (datosGuardados) actualizarAvatar(datosGuardados);
+            
+            // Fecha/hora de última conexión
+            const hoy = new Date();
+            document.getElementById('info-ultimo-acceso').innerText = hoy.toLocaleDateString() + ' ' + hoy.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        });
+
+        // Cerrar menú lateral
+        function cerrarMenuLateral() {
+            document.getElementById('menu-lateral').classList.remove('abierto');
+            document.getElementById('capa-menu').classList.remove('visible');
+            document.getElementById('btn-menu-lateral').setAttribute('aria-expanded', 'false');
+        }
+
+        document.getElementById('btn-cerrar-menu').addEventListener('click', cerrarMenuLateral);
+        document.getElementById('capa-menu').addEventListener('click', cerrarMenuLateral);
+
+        // Identificación del usuario desde el menú lateral
+        const modalAcceso = document.getElementById('modal-acceso');
+        const formularioAcceso = document.getElementById('formulario-acceso');
+        const usuarioAcceso = document.getElementById('usuario-acceso');
+        const correoAcceso = document.getElementById('correo-acceso');
+        const telefonoAcceso = document.getElementById('telefono-acceso');
+        const rolAcceso = document.getElementById('rol-acceso');
+        const mensajeAcceso = document.getElementById('mensaje-acceso');
+        const usuarioActivo = document.getElementById('usuario-activo');
+        const rolUsuario = document.getElementById('rol-usuario');
+        const etiquetaRol = document.getElementById('etiqueta-rol');
+        const correoUsuario = document.getElementById('correo-usuario');
+        const telefonoUsuario = document.getElementById('telefono-usuario');
+        const avatarIniciales = document.getElementById('avatar-iniciales');
+        const fotoUsuario = document.getElementById('foto-usuario');
+
+        function actualizarAvatar(datos) {
+            const fotoGuardada = localStorage.getItem('fotoUsuarioInventario') || datos.foto || '';
+            if (fotoGuardada) {
+                avatarIniciales.innerHTML = '';
+                const imagen = document.createElement('img');
+                imagen.src = fotoGuardada;
+                imagen.alt = `Foto de perfil de ${datos.nombre || 'usuario'}`;
+                avatarIniciales.appendChild(imagen);
+            } else {
+                avatarIniciales.textContent = (datos.nombre || 'U').charAt(0).toUpperCase();
             }
+        }
+
+        function actualizarUsuario(datos) {
+            const { nombre, correo, telefono, rol } = datos;
+            usuarioActivo.textContent = nombre;
+            rolUsuario.textContent = `Rol: ${rol}`;
+            etiquetaRol.textContent = rol;
+            correoUsuario.textContent = `📧 ${correo}`;
+            telefonoUsuario.textContent = `📞 ${telefono || 'Sin teléfono'}`;
+            actualizarAvatar(datos);
+            document.body.classList.toggle('es-admin', rol === 'Administrador');
+            actualizarProgresoPerfil(datos);
+        }
+
+        function actualizarProgresoPerfil(datos) {
+            const campos = [datos.nombre, datos.correo, datos.telefono, datos.rol, localStorage.getItem('fotoUsuarioInventario') || datos.foto];
+            const completados = campos.filter(Boolean).length;
+            const porcentaje = Math.round((completados / campos.length) * 100);
+            const porcentajeElemento = document.getElementById('porcentaje-perfil');
+            const barra = document.getElementById('barra-perfil');
+            const ayuda = document.getElementById('ayuda-perfil');
+            const quitarFoto = document.getElementById('btn-quitar-foto');
+            if (porcentajeElemento) porcentajeElemento.textContent = `${porcentaje}%`;
+            if (barra) barra.style.width = `${porcentaje}%`;
+            if (ayuda) ayuda.textContent = porcentaje === 100 ? 'Tu perfil está completo.' : 'Completa tus datos y añade una foto para mejorar tu perfil.';
+            if (quitarFoto) quitarFoto.classList.toggle('oculto', !campos[4]);
+        }
+
+        fotoUsuario.addEventListener('change', (evento) => {
+            const archivo = evento.target.files[0];
+            if (!archivo || !archivo.type.startsWith('image/')) return;
+
+            const lector = new FileReader();
+            lector.onload = () => {
+                const imagen = new Image();
+                imagen.onload = () => {
+                    // Reducir la imagen evita superar el límite práctico de localStorage.
+                    const maximo = 320;
+                    const escala = Math.min(1, maximo / Math.max(imagen.width, imagen.height));
+                    const lienzo = document.createElement('canvas');
+                    lienzo.width = Math.max(1, Math.round(imagen.width * escala));
+                    lienzo.height = Math.max(1, Math.round(imagen.height * escala));
+                    lienzo.getContext('2d').drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+                    const foto = lienzo.toDataURL('image/jpeg', 0.8);
+
+                    const datos = JSON.parse(localStorage.getItem('datosUsuarioInventario') || 'null') || {
+                        nombre: usuarioActivo.textContent,
+                        correo: '',
+                        telefono: '',
+                        rol: 'Usuario'
+                    };
+                    datos.foto = foto;
+                    localStorage.setItem('datosUsuarioInventario', JSON.stringify(datos));
+                    localStorage.setItem('fotoUsuarioInventario', foto);
+                    actualizarUsuario(datos);
+                    notificar('Foto de perfil actualizada');
+                };
+                imagen.src = lector.result;
+            };
+            lector.readAsDataURL(archivo);
+        });
+
+        document.getElementById('btn-identificarse').addEventListener('click', () => {
+            mensajeAcceso.textContent = '';
+            const datosGuardados = JSON.parse(localStorage.getItem('datosUsuarioInventario') || 'null');
+            usuarioAcceso.value = datosGuardados?.nombre || '';
+            correoAcceso.value = datosGuardados?.correo || '';
+            telefonoAcceso.value = datosGuardados?.telefono || '';
+                                rolAcceso.value = datosGuardados?.rol || 'Usuario';
+            document.getElementById('clave-acceso').value = '';
+            modalAcceso.classList.remove('oculto');
+            usuarioAcceso.focus();
+        });
+
+        formularioAcceso.addEventListener('submit', (evento) => {
+            evento.preventDefault();
+            const datos = {
+                nombre: usuarioAcceso.value.trim(),
+                correo: correoAcceso.value.trim(),
+                telefono: telefonoAcceso.value.trim(),
+                rol: rolAcceso.value,
+                clave: document.getElementById('clave-acceso').value,
+                foto: JSON.parse(localStorage.getItem('datosUsuarioInventario') || 'null')?.foto || ''
+            };
+            if (!datos.nombre || !datos.correo) {
+                mensajeAcceso.textContent = 'Completa tu nombre y correo electrónico.';
+                return;
+            }
+            if (datos.rol === 'Administrador') {
+                const claveGuardada = localStorage.getItem('claveAdministradorInventario');
+                if (claveGuardada && datos.clave !== claveGuardada) {
+                    mensajeAcceso.textContent = 'La contraseña de administrador no es correcta.';
+                    return;
+                }
+                if (!claveGuardada) localStorage.setItem('claveAdministradorInventario', datos.clave);
+            }
+            localStorage.setItem('datosUsuarioInventario', JSON.stringify(datos));
+            localStorage.setItem('usuarioInventario', datos.nombre);
+            actualizarUsuario(datos);
+            modalAcceso.classList.add('oculto');
+            mostrarPestanaLateral('tab-perfil', document.querySelector('.tab-btn-lateral'));
+            notificar(`Datos guardados: ${datos.nombre}`);
+        });
+
+        document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
+            localStorage.removeItem('usuarioInventario');
+            localStorage.removeItem('datosUsuarioInventario');
+            localStorage.removeItem('fotoUsuarioInventario');
+            actualizarUsuario({ nombre: 'Usuario Activo', correo: 'Sin correo', telefono: '', rol: 'No identificado', foto: '' });
+            notificar('Sesión cerrada');
+        });
+
+        document.getElementById('btn-quitar-foto').addEventListener('click', () => {
+            const datos = JSON.parse(localStorage.getItem('datosUsuarioInventario') || 'null');
+            localStorage.removeItem('fotoUsuarioInventario');
+            if (datos) {
+                datos.foto = '';
+                localStorage.setItem('datosUsuarioInventario', JSON.stringify(datos));
+                actualizarUsuario(datos);
+            }
+            fotoUsuario.value = '';
+            notificar('Foto de perfil eliminada');
+        });
+
+        document.querySelectorAll('[data-acceso-usuario]').forEach(boton => boton.addEventListener('click', () => {
+            const id = boton.dataset.accesoUsuario;
+            const pestaña = document.querySelector(`[onclick*="${id}"]`);
+            if (typeof cambiarPestana === 'function') cambiarPestana(id, pestaña);
+            cerrarMenuLateral();
+        }));
+
+        const LIMITE_PLAN_GRATUITO = 30;
+        const datosUsuarioGuardados = JSON.parse(localStorage.getItem('datosUsuarioInventario') || 'null');
+        function actualizarPlanUsuario() {
+            const etiqueta = document.getElementById('etiqueta-plan-usuario');
+            const detalle = document.getElementById('detalle-plan-usuario');
+            const esPro = localStorage.getItem('planInventify') === 'pro';
+            if (!etiqueta || !detalle) return;
+            etiqueta.textContent = esPro ? 'PRO' : 'GRATIS';
+            etiqueta.style.background = esPro ? 'var(--purple)' : 'var(--green)';
+            etiqueta.style.color = 'white';
+            detalle.textContent = esPro
+                ? 'INVENTIFY Pro: productos ilimitados y herramientas avanzadas.'
+                : `Plan gratuito: hasta ${LIMITE_PLAN_GRATUITO} productos y funciones esenciales.`;
+        }
+        actualizarPlanUsuario();
+        if (datosUsuarioGuardados) actualizarUsuario(datosUsuarioGuardados);
+
+        function notificar(mensaje, esError = false) {
+            const aviso = document.getElementById('notificacion');
+            aviso.textContent = mensaje;
+            aviso.classList.toggle('error', esError);
+            aviso.classList.add('visible');
+            clearTimeout(aviso._temporizador);
+            aviso._temporizador = setTimeout(() => {
+                aviso.classList.remove('visible');
+                aviso.classList.remove('error');
+            }, 3500);
+        }
+
+        // Mejoras incorporadas: estado de conexión, atajos, persistencia y seguridad básica.
+        const estadoConexion = document.getElementById('estado-conexion');
+        function actualizarEstadoConexion() {
+            if (!estadoConexion) return;
+            const conectado = navigator.onLine;
+            estadoConexion.textContent = conectado ? 'En línea' : 'Sin conexión';
+            estadoConexion.classList.toggle('sin-conexion', !conectado);
+        }
+        window.addEventListener('online', actualizarEstadoConexion);
+        window.addEventListener('offline', actualizarEstadoConexion);
+        actualizarEstadoConexion();
+
+        // Evita perder cambios accidentales al cerrar o recargar la página.
+        window.addEventListener('beforeunload', evento => {
+            if (document.body.classList.contains('guardando')) {
+                evento.preventDefault();
+                evento.returnValue = '';
+            }
+        });
+
+        // Atajos de teclado: / busca y Escape cierra paneles o modales.
+        document.addEventListener('keydown', evento => {
+            if (evento.key === '/' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                evento.preventDefault();
+                document.getElementById('buscador')?.focus();
+            }
+            if (evento.key === 'Escape') {
+                cerrarMenuLateral();
+                document.querySelectorAll('.modal:not(.oculto)').forEach(modal => modal.classList.add('oculto'));
+            }
+        });
+
+        // Monedas disponibles y formato compartido por toda la aplicación.
+        const MONEDAS = {
+            USD: '🇺🇸 Dólar estadounidense (USD)',
+            EUR: '🇪🇺 Euro (EUR)',
+            MXN: '🇲🇽 Peso mexicano (MXN)',
+            COP: '🇨🇴 Peso colombiano (COP)',
+            ARS: '🇦🇷 Peso argentino (ARS)',
+            CLP: '🇨🇱 Peso chileno (CLP)',
+            PEN: '🇵🇪 Sol peruano (PEN)',
+            BRL: '🇧🇷 Real brasileño (BRL)',
+            GBP: '🇬🇧 Libra esterlina (GBP)'
         };
-        let inventario = leerListaGuardada('inventario').filter(p => p && typeof p === 'object' && !Array.isArray(p)).map(p => ({
-            ...p, cantidad:Number(p.cantidad)||0, precio:Number(p.precio)||0, precioCompra:Number(p.precioCompra)||0, stockMinimo:Number(p.stockMinimo)||0,
-            proveedor:p.proveedor||'', vencimiento:p.vencimiento||'', movimientos:Array.isArray(p.movimientos)?p.movimientos:[]
-        }));
-        let ventas = leerListaGuardada('ventas').filter(v => v && typeof v === 'object' && !Array.isArray(v)).map(v => ({
-            ...v, nombre:String(v.nombre||''), cantidad:Number(v.cantidad)||0, total:Number(v.total)||0, fecha:String(v.fecha||'')
-        }));
-        let orden = { campo:'nombre', asc:true };
-        const $ = id => document.getElementById(id);
-        const guardar = () => {
+        let monedaSeleccionada = localStorage.getItem('monedaInventario') || 'USD';
+
+        function formatearMoneda(valor) {
             try {
-                localStorage.setItem('inventario', JSON.stringify(inventario));
-                localStorage.setItem('ventas', JSON.stringify(ventas));
+                return new Intl.NumberFormat('es-ES', {
+                    style: 'currency',
+                    currency: monedaSeleccionada
+                }).format(Number(valor) || 0);
+            } catch (error) {
+                return `${monedaSeleccionada} ${(Number(valor) || 0).toFixed(2)}`;
+            }
+        }
+
+        function inicializarSelectorMoneda() {
+            const selector = document.getElementById('selector-moneda');
+            if (!selector) return;
+            selector.innerHTML = Object.entries(MONEDAS)
+                .map(([codigo, nombre]) => `<option value="${codigo}">${nombre}</option>`)
+                .join('');
+            selector.value = MONEDAS[monedaSeleccionada] ? monedaSeleccionada : 'USD';
+            monedaSeleccionada = selector.value;
+            localStorage.setItem('monedaInventario', monedaSeleccionada);
+            selector.addEventListener('change', () => {
+                monedaSeleccionada = selector.value;
+                localStorage.setItem('monedaInventario', monedaSeleccionada);
+                renderizar();
+                renderizarHistorial();
+                actualizarComparativaProveedores();
+                notificar(`Moneda cambiada a ${monedaSeleccionada}`);
+            });
+        }
+
+        // Comparativa de proveedores basada en los productos registrados.
+        function actualizarComparativaProveedores() {
+            const tabla = document.getElementById('lista-proveedores');
+            const recomendacion = document.getElementById('proveedor-recomendado');
+            if (!tabla || !recomendacion) return;
+
+            const posiblesClaves = ['productos', 'inventario', 'productosInventario'];
+            let productos = window.productos || window.inventario || [];
+            if (!Array.isArray(productos) || !productos.length) {
+                for (const clave of posiblesClaves) {
+                    try {
+                        const guardados = JSON.parse(localStorage.getItem(clave) || 'null');
+                        if (Array.isArray(guardados)) { productos = guardados; break; }
+                    } catch (error) { /* Ignora datos guardados inválidos. */ }
+                }
+            }
+
+            const grupos = {};
+            productos.forEach(producto => {
+                const proveedor = String(producto.proveedor || 'Sin proveedor').trim() || 'Sin proveedor';
+                const unidades = Number(producto.cantidad ?? producto.stock ?? 0) || 0;
+                const costo = Number(producto.precioCompra ?? producto.precio_compra ?? producto.costo ?? 0) || 0;
+                const venta = Number(producto.precio ?? producto.precioVenta ?? producto.precio_venta ?? 0) || 0;
+                if (!grupos[proveedor]) grupos[proveedor] = { productos: 0, unidades: 0, costo: 0, venta: 0 };
+                grupos[proveedor].productos += 1;
+                grupos[proveedor].unidades += unidades;
+                grupos[proveedor].costo += costo * unidades;
+                grupos[proveedor].venta += venta * unidades;
+            });
+
+            const moneda = formatearMoneda;
+            const resultados = Object.entries(grupos).map(([nombre, datos]) => ({
+                nombre, ...datos,
+                ganancia: datos.venta - datos.costo,
+                margen: datos.costo > 0 ? ((datos.venta - datos.costo) / datos.costo) * 100 : 0
+            })).sort((a, b) => b.ganancia - a.ganancia);
+
+            if (!resultados.length) {
+                tabla.innerHTML = '<tr><td colspan="7" class="vacio">Aún no hay productos con proveedor registrado.</td></tr>';
+                recomendacion.textContent = 'Agrega productos con proveedor, precio de compra y precio de venta para comparar opciones.';
+                return;
+            }
+            tabla.innerHTML = resultados.map(item => `<tr>
+                <td><strong>${item.nombre}</strong></td><td>${item.productos}</td><td>${item.unidades}</td>
+                <td>${moneda(item.costo)}</td><td>${moneda(item.venta)}</td><td class="estado-disponible">${moneda(item.ganancia)}</td>
+                <td>${item.margen.toFixed(1)}%</td>
+            </tr>`).join('');
+            const mejor = resultados[0];
+            recomendacion.innerHTML = `<strong>✅ Proveedor más rentable: ${mejor.nombre}</strong>
+                Genera una ganancia estimada de <strong>${moneda(mejor.ganancia)}</strong>, con un margen del <strong>${mejor.margen.toFixed(1)}%</strong> sobre los productos registrados.`;
+        }
+
+        document.querySelectorAll('.nav-tab').forEach(tab => tab.addEventListener('click', () => {
+            setTimeout(actualizarComparativaProveedores, 0);
+        }));
+        window.addEventListener('storage', actualizarComparativaProveedores);
+        const listaProductosObservada = document.getElementById('lista-productos');
+        if (listaProductosObservada) new MutationObserver(actualizarComparativaProveedores).observe(listaProductosObservada, { childList: true });
+        actualizarComparativaProveedores();
+
+        // Chat especializado exclusivamente en inventario.
+        const formChatAyuda = document.getElementById('form-chat-ayuda');
+        const entradaChat = document.getElementById('entrada-chat');
+        const chatMensajes = document.getElementById('chat-mensajes');
+        const botonChat = formChatAyuda.querySelector('button');
+        const ENDPOINT_CHAT = '/api/chat';
+
+        function agregarMensajeChat(texto, tipo) {
+            const mensaje = document.createElement('div');
+            mensaje.className = `mensaje-chat ${tipo}`;
+            mensaje.textContent = texto;
+            chatMensajes.appendChild(mensaje);
+            chatMensajes.scrollTop = chatMensajes.scrollHeight;
+            return mensaje;
+        }
+
+        function respuestaDeRespaldo(pregunta) {
+            const texto = pregunta.toLowerCase();
+            if (/stock|inventario|existencia|cantidad|agotad|mínimo|bajo/.test(texto)) {
+                return 'Puedes revisar el stock desde la pestaña Inventario. Usa el filtro “Stock bajo” o “Agotados” para localizar productos que necesitan atención. También puedes definir un stock mínimo al crear o editar cada producto.';
+            }
+            if (/venta|vender|ganancia|ingreso|precio/.test(texto)) {
+                return 'Las ventas se registran desde la tabla de Inventario con el botón “Vender”. El sistema descuenta las unidades, guarda el movimiento y actualiza el historial, los ingresos y las ganancias.';
+            }
+            if (/producto|agregar|crear|editar|proveedor|categoría/.test(texto)) {
+                return 'Para administrar productos, abre Inventario. Completa nombre, cantidad, precios, categoría, estado, proveedor y vencimiento. Puedes crear categorías nuevas y editar los productos existentes.';
+            }
+            if (/ajuste|devolución|pérdida|entrada|salida/.test(texto)) {
+                return 'En “Ajustes y devoluciones” selecciona el producto, indica las unidades, escribe el motivo y elige Entrada o Salida. Cada ajuste queda registrado en Movimientos.';
+            }
+            if (/reporte|pdf|orden de compra|compras/.test(texto)) {
+                return 'Usa “Reporte PDF” para generar un resumen del inventario o “Orden de compra” para listar productos agotados o con stock bajo.';
+            }
+            if (/copia|respaldo|exportar|importar|seguridad/.test(texto)) {
+                return 'La copia de seguridad está en Configuración, dentro de la zona de administración. Desde allí puedes exportar tus datos o importar un archivo JSON.';
+            }
+            if (/configuración|moneda|idioma|tema|oscuro/.test(texto)) {
+                return 'En Configuración puedes cambiar la moneda, el idioma y el tema visual. Las opciones administrativas también incluyen gastos, metas, empleados y copias de seguridad.';
+            }
+            return 'Soy el asistente del inventario. Puedo ayudarte con productos, stock, ventas, ajustes, devoluciones, categorías, proveedores, vencimientos, reportes, copias de seguridad y configuración. ¿Qué necesitas consultar?';
+        }
+
+        async function consultarIA(pregunta) {
+            const respuesta = await fetch(ENDPOINT_CHAT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: pregunta,
+                    context: 'Eres un asistente tipo bot especializado exclusivamente en este gestor de inventario. Responde en español, de forma clara, breve y útil. Solo puedes ayudar con productos, categorías, stock, stock mínimo, estados, proveedores, vencimientos, ventas, ganancias, ajustes, devoluciones, movimientos, reportes PDF, órdenes de compra, configuración, usuarios y copias de seguridad. Si preguntan por otro tema, indica amablemente que solo atiendes consultas relacionadas con el inventario. No inventes datos del inventario: si necesitas cifras concretas, pide al usuario que revise la sección correspondiente de la aplicación.'
+                })
+            });
+            if (!respuesta.ok) throw new Error('El servicio de IA no está disponible.');
+            const datos = await respuesta.json();
+            const texto = datos.reply || datos.message || datos.content;
+            if (!texto) throw new Error('La respuesta del servicio está vacía.');
+            return texto;
+        }
+
+        formChatAyuda.addEventListener('submit', async (evento) => {
+            evento.preventDefault();
+            const pregunta = entradaChat.value.trim();
+            if (!pregunta || botonChat.disabled) return;
+
+            agregarMensajeChat(pregunta, 'usuario');
+            entradaChat.value = '';
+            botonChat.disabled = true;
+            entradaChat.disabled = true;
+            const mensajeCarga = agregarMensajeChat('Revisando tu consulta de inventario…', 'ia');
+
+            try {
+                mensajeCarga.textContent = await consultarIA(pregunta);
+            } catch (error) {
+                mensajeCarga.textContent = respuestaDeRespaldo(pregunta);
+            } finally {
+                botonChat.disabled = false;
+                entradaChat.disabled = false;
+                entradaChat.focus();
+            }
+        });
+
+        // Funciones principales de la aplicación.
+        // Lee datos JSON guardados y devuelve un valor seguro si no existen.
+        const leer = (clave, valor = []) => {
+            try { return JSON.parse(localStorage.getItem(clave)) ?? valor; }
+            catch (error) { return valor; }
+        };
+        let productos = leer('productosInventario', leer('productos', leer('inventario')));
+        let categorias = leer('categoriasInventario');
+        let ventas = leer('ventasInventario');
+        let movimientos = leer('movimientosInventario');
+        productos = Array.isArray(productos) ? productos : [];
+        // Convierte movimientos antiguos de texto al formato completo.
+        movimientos = Array.isArray(movimientos) ? movimientos.map(movimiento => typeof movimiento === 'string' ? { texto: movimiento, fecha: new Date().toISOString(), usuario: localStorage.getItem('usuarioInventario') || 'Sistema' } : movimiento) : [];
+        categorias = Array.isArray(categorias) ? categorias : [];
+        ventas = Array.isArray(ventas) ? ventas : [];
+        movimientos = Array.isArray(movimientos) ? movimientos : [];
+        window.productos = productos;
+        window.inventario = productos;
+
+        let guardando = false;
+        // Persiste el inventario y sus historiales en localStorage.
+        function guardarDatos() {
+            if (guardando) return false;
+            guardando = true;
+            document.body.classList.add('guardando');
+            const estado = document.getElementById('estado-guardado');
+            if (estado) estado.textContent = '⏳ Guardando datos…';
+            try {
+                localStorage.setItem('productosInventario', JSON.stringify(productos));
+                localStorage.setItem('categoriasInventario', JSON.stringify(categorias));
+                localStorage.setItem('ventasInventario', JSON.stringify(ventas));
+                localStorage.setItem('movimientosInventario', JSON.stringify(movimientos));
+                if (estado) estado.textContent = '✅ Datos guardados';
                 return true;
-            } catch {
-                notificar('No se pudieron guardar los cambios en este navegador.', true);
+            } catch (error) {
+                console.error('No se pudieron guardar los datos:', error);
+                if (estado) estado.textContent = '❌ No se pudieron guardar';
+                notificar('No hay espacio para guardar. Exporta una copia y libera espacio.', true);
+                return false;
+            } finally {
+                guardando = false;
+                document.body.classList.remove('guardando');
+            }
+        }
+
+        // Historial local para deshacer operaciones importantes.
+        let ultimaAccion = null;
+        let carritoVenta = [];
+        let ultimaVentaComprobante = null;
+        const guardarEstadoDeshacer = () => {
+            ultimaAccion = JSON.stringify({ productos, categorias, ventas, movimientos });
+            const boton = document.getElementById('btn-deshacer');
+            if (boton) boton.disabled = false;
+        };
+        function deshacerUltimaAccion() {
+            if (!ultimaAccion) return;
+            const estado = JSON.parse(ultimaAccion);
+            productos = estado.productos; categorias = estado.categorias; ventas = estado.ventas; movimientos = estado.movimientos;
+            window.productos = productos; window.inventario = productos;
+            guardarDatos(); renderizar(); renderizarHistorial(); ultimaAccion = null;
+            document.getElementById('btn-deshacer').disabled = true;
+            notificar('Última acción deshecha');
+        }
+        function actualizarSelectorCarrito() {
+            const selector = document.getElementById('producto-carrito');
+            if (!selector) return;
+            selector.innerHTML = productos.map((p, i) => `<option value="${i}" ${p.cantidad <= 0 ? 'disabled' : ''}>${escapar(p.nombre)} — stock: ${p.cantidad}</option>`).join('');
+        }
+        function renderizarCarrito() {
+            const lista = document.getElementById('lista-carrito');
+            const total = carritoVenta.reduce((suma, item) => suma + item.total, 0);
+            lista.innerHTML = carritoVenta.length ? carritoVenta.map((item, i) => `<li><strong>${escapar(item.nombre)}</strong><span>${item.cantidad} × ${monedaLocal(item.precioFinal)}</span><span>${monedaLocal(item.total)}</span><button class="btn-eliminar" type="button" data-quitar-carrito="${i}">Quitar</button></li>`).join('') : '<li class="vacio">El carrito está vacío.</li>';
+            document.getElementById('total-carrito').textContent = monedaLocal(total);
+            document.getElementById('btn-confirmar-carrito').disabled = !carritoVenta.length;
+        }
+
+        // Esta función faltaba y hacía que todas las pestañas quedaran inutilizables.
+        window.cambiarPestana = function (id, boton) {
+            document.querySelectorAll('.seccion-contenido').forEach(seccion => seccion.classList.remove('activa'));
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('activa'));
+            const seccion = document.getElementById(id);
+            if (!seccion) return;
+            seccion.classList.add('activa');
+            if (boton) boton.classList.add('activa');
+            if (id === 'pestana-proveedores') actualizarComparativaProveedores();
+        };
+
+        const escapar = valor => String(valor ?? '').replace(/[&<>"']/g, caracter => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[caracter]));
+        const monedaLocal = valor => formatearMoneda(valor);
+
+        const TRADUCCIONES = {
+            es: { proveedoresTitulo:'🏷️ Comparativa de proveedores', proveedoresNota:'Consulta los costos registrados y descubre cuál opción resulta más rentable.', guiaTitulo:'📘 Guía de uso sencillo', faqTitulo:'❓ Preguntas frecuentes', asistenteTitulo:'🤖 Asistente de inventario', tituloApp:'INVENTIFY', menuDashboard:'📊 Panel General', menuInventario:'📦 Inventario', menuVentas:'🛒 Historial Ventas', menuMovimientos:'📋 Movimientos', menuConfig:'⚙️ Configuración', tarjetaProductos:'Productos', tarjetaUnidades:'Unidades', tarjetaValor:'Valor Inventario', tarjetaGananciaEst:'Ganancia estimada', tarjetaAlertas:'Alertas stock', balanceTitulo:'💰 Balance Financiero y Ganancias Realizadas', balanceNota:'Basado en el historial de ventas registradas.', totalVentas:'Total Ingresos por Ventas', gananciaNeta:'Ganancia Neta Realizada', grafCategoria:'Productos por categoría', grafEstado:'Productos por estado', optCategoria:'Categoría', optEstado:'Estado', estDisponible:'Disponible', estAgotado:'Agotado', estPendiente:'Pendiente', btnAgregar:'Agregar producto', btnCancelar:'Cancelar edición', histVentasTitulo:'Historial de ventas', histVentasNota:'Registro de ventas procesadas en el sistema.', resumenVentasTitulo:'📈 Resumen de productos vendidos', histMovTitulo:'Registro de movimientos', histMovNota:'Las entradas, salidas y ajustes quedan guardados automáticamente.', cfgTitulo:'Ajustes Generales', lblMoneda:'Moneda principal:', lblIdioma:'Idioma de la app:', lblTema:'Apariencia visual:', btnModoOscuro:'🌙 Modo oscuro', cfgCopiaTitulo:'Copia de Seguridad y Datos', cfgCopiaNota:'Guarda un archivo de respaldo o restaura tu información en otro dispositivo.', btnExportar:'📥 Exportar copia de seguridad', btnImportar:'📤 Importar datos', btnOrdenCompra:'🛒 Orden de compra', btnReportePdf:'📄 Reporte PDF', phNombre:'Nombre del producto', phCantidad:'Cantidad', phPrecioVenta:'Precio de venta', phPrecioCompra:'Precio de compra (Costo)', phStockMinimo:'Stock mínimo', phProveedor:'Proveedor', phBuscar:'Buscar por producto o proveedor...', fTodasCat:'Todas las categorías', fTodosEst:'Todos los estados', fTodoStock:'Todo el stock', fStockBajo:'Stock bajo', fAgotados:'Agotados', fVencidos:'Vencidos', fProximos:'Vencen en 30 días', btnLimpiar:'Limpiar filtros' },
+            en: { proveedoresTitulo:'🏷️ Supplier comparison', proveedoresNota:'Review supplier costs and find the most profitable option.', guiaTitulo:'📘 Simple user guide', faqTitulo:'❓ Frequently asked questions', asistenteTitulo:'🤖 Inventory assistant', tituloApp:'INVENTIFY', menuDashboard:'📊 Dashboard', menuInventario:'📦 Inventory', menuVentas:'🛒 Sales history', menuMovimientos:'📋 Movements', menuConfig:'⚙️ Settings', tarjetaProductos:'Products', tarjetaUnidades:'Units', tarjetaValor:'Inventory value', tarjetaGananciaEst:'Estimated profit', tarjetaAlertas:'Stock alerts', balanceTitulo:'💰 Financial balance and completed profit', balanceNota:'Based on recorded sales.', totalVentas:'Total sales income', gananciaNeta:'Completed net profit', grafCategoria:'Products by category', grafEstado:'Products by status', optCategoria:'Category', optEstado:'Status', estDisponible:'Available', estAgotado:'Out of stock', estPendiente:'Pending', btnAgregar:'Add product', btnCancelar:'Cancel editing', histVentasTitulo:'Sales history', histVentasNota:'Sales recorded in the system.', resumenVentasTitulo:'📈 Sold products summary', histMovTitulo:'Movement log', histMovNota:'Entries, exits and adjustments are saved automatically.', cfgTitulo:'General settings', lblMoneda:'Main currency:', lblIdioma:'App language:', lblTema:'Appearance:', btnModoOscuro:'🌙 Dark mode', cfgCopiaTitulo:'Backup and data', cfgCopiaNota:'Save or restore your information on another device.', btnExportar:'📥 Export backup', btnImportar:'📤 Import data', btnOrdenCompra:'🛒 Purchase order', btnReportePdf:'📄 PDF report', phNombre:'Product name', phCantidad:'Quantity', phPrecioVenta:'Sale price', phPrecioCompra:'Purchase price (cost)', phStockMinimo:'Minimum stock', phProveedor:'Supplier', phBuscar:'Search by product or supplier...', fTodasCat:'All categories', fTodosEst:'All statuses', fTodoStock:'All stock', fStockBajo:'Low stock', fAgotados:'Out of stock', fVencidos:'Expired', fProximos:'Expires in 30 days', btnLimpiar:'Clear filters' },
+            fr: { proveedoresTitulo:'🏷️ Comparaison des fournisseurs', proveedoresNota:'Consultez les coûts et trouvez l’option la plus rentable.', guiaTitulo:'📘 Guide d’utilisation simple', faqTitulo:'❓ Questions fréquentes', asistenteTitulo:'🤖 Assistant d’inventaire', tituloApp:'INVENTIFY', menuDashboard:'📊 Tableau de bord', menuInventario:'📦 Inventaire', menuVentas:'🛒 Historique des ventes', menuMovimientos:'📋 Mouvements', menuConfig:'⚙️ Configuration', tarjetaProductos:'Produits', tarjetaUnidades:'Unités', tarjetaValor:'Valeur de l’inventaire', tarjetaGananciaEst:'Bénéfice estimé', tarjetaAlertas:'Alertes de stock', balanceTitulo:'💰 Solde financier et bénéfices réalisés', balanceNota:'Selon les ventes enregistrées.', totalVentas:'Revenus totaux des ventes', gananciaNeta:'Bénéfice net réalisé', grafCategoria:'Produits par catégorie', grafEstado:'Produits par état', optCategoria:'Catégorie', optEstado:'État', estDisponible:'Disponible', estAgotado:'Épuisé', estPendiente:'En attente', btnAgregar:'Ajouter le produit', btnCancelar:'Annuler la modification', histVentasTitulo:'Historique des ventes', histVentasNota:'Ventes enregistrées dans le système.', resumenVentasTitulo:'📈 Résumé des produits vendus', histMovTitulo:'Journal des mouvements', histMovNota:'Les entrées, sorties et ajustements sont enregistrés automatiquement.', cfgTitulo:'Paramètres généraux', lblMoneda:'Devise principale :', lblIdioma:'Langue de l’application :', lblTema:'Apparence :', btnModoOscuro:'🌙 Mode sombre', cfgCopiaTitulo:'Sauvegarde et données', cfgCopiaNota:'Enregistrez ou restaurez vos informations sur un autre appareil.', btnExportar:'📥 Exporter la sauvegarde', btnImportar:'📤 Importer les données', btnOrdenCompra:'🛒 Bon de commande', btnReportePdf:'📄 Rapport PDF', phNombre:'Nom du produit', phCantidad:'Quantité', phPrecioVenta:'Prix de vente', phPrecioCompra:'Prix d’achat (coût)', phStockMinimo:'Stock minimum', phProveedor:'Fournisseur', phBuscar:'Rechercher un produit ou fournisseur...', fTodasCat:'Toutes les catégories', fTodosEst:'Tous les états', fTodoStock:'Tout le stock', fStockBajo:'Stock faible', fAgotados:'Épuisés', fVencidos:'Expirés', fProximos:'Expire dans 30 jours', btnLimpiar:'Effacer les filtres' }
+        };
+        function aplicarIdioma(idioma) {
+            const textos = TRADUCCIONES[idioma] || TRADUCCIONES.es;
+            document.documentElement.lang = idioma;
+            document.querySelectorAll('[data-i18n]').forEach(elemento => { if (textos[elemento.dataset.i18n]) elemento.textContent = textos[elemento.dataset.i18n]; });
+            document.querySelectorAll('[data-i18n-ph]').forEach(elemento => { if (textos[elemento.dataset.i18nPh]) elemento.placeholder = textos[elemento.dataset.i18nPh]; });
+        }
+        const selectorIdioma = document.getElementById('selector-idioma');
+        selectorIdioma.value = localStorage.getItem('idiomaInventario') || 'es';
+        aplicarIdioma(selectorIdioma.value);
+        selectorIdioma.addEventListener('change', () => { localStorage.setItem('idiomaInventario', selectorIdioma.value); aplicarIdioma(selectorIdioma.value); notificar('Idioma actualizado'); });
+
+        function actualizarSelects() {
+            const opciones = categorias.map(categoria => `<option value="${escapar(categoria)}">${escapar(categoria)}</option>`).join('');
+            const textos = TRADUCCIONES[selectorIdioma.value] || TRADUCCIONES.es;
+            ['categoria', 'filtro-categoria'].forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                const valor = select.value;
+                const inicio = id === 'categoria' ? `<option value="" disabled>${textos.optCategoria}</option>` : `<option value="">${textos.fTodasCat}</option>`;
+                select.innerHTML = inicio + opciones;
+                select.value = valor;
+            });
+            const ajuste = document.getElementById('producto-ajuste');
+            if (ajuste) {
+                const valorAjuste = ajuste.value;
+                ajuste.innerHTML = productos.map((p, i) => `<option value="${i}">${escapar(p.nombre)}</option>`).join('');
+                if (productos.length) ajuste.value = productos.some((_, i) => String(i) === valorAjuste) ? valorAjuste : '0';
+            }
+            // Mantiene disponible el inventario actualizado para ventas en carrito.
+            actualizarSelectorCarrito();
+        }
+
+        let paginaInventario = 1;
+        const productosPorPagina = 10;
+        let ordenInventario = { clave: 'nombre', direccion: 1 };
+        function renderizarPaginacion(total) {
+            const contenedor = document.getElementById('paginacion-inventario');
+            const paginas = Math.max(1, Math.ceil(total / productosPorPagina));
+            paginaInventario = Math.min(paginaInventario, paginas);
+            contenedor.innerHTML = `<button class="btn-secundario" type="button" data-pagina="anterior" ${paginaInventario === 1 ? 'disabled' : ''}>← Anterior</button><span class="nota">Página ${paginaInventario} de ${paginas}</span><button class="btn-secundario" type="button" data-pagina="siguiente" ${paginaInventario === paginas ? 'disabled' : ''}>Siguiente →</button>`;
+        }
+        // Actualiza la tabla, los indicadores y los selectores del inventario.
+        function renderizar() {
+            const cuerpo = document.getElementById('lista-productos');
+            const consulta = (document.getElementById('buscador')?.value || '').toLowerCase();
+            const categoria = document.getElementById('filtro-categoria')?.value || '';
+            const estado = document.getElementById('filtro-estado')?.value || '';
+            const filtroStock = document.getElementById('filtro-stock')?.value || '';
+            const hoy = new Date();
+            const visibles = productos.map((p, indice) => ({ p, indice })).filter(({ p }) => {
+                const texto = `${p.nombre} ${p.proveedor} ${p.codigoBarras || ''}`.toLowerCase();
+                const fecha = p.vencimiento ? new Date(`${p.vencimiento}T00:00:00`) : null;
+                return texto.includes(consulta) && (!categoria || p.categoria === categoria) && (!estado || p.estado === estado) &&
+                    (!filtroStock || (filtroStock === 'bajo' && p.cantidad <= p.stockMinimo) || (filtroStock === 'agotado' && p.cantidad <= 0) ||
+                    (filtroStock === 'vencido' && fecha && fecha < hoy) || (filtroStock === 'proximo' && fecha && fecha >= hoy && fecha <= new Date(hoy.getTime() + 30 * 86400000)));
+            });
+            visibles.sort((a, b) => String(a.p[ordenInventario.clave] ?? '').localeCompare(String(b.p[ordenInventario.clave] ?? ''), undefined, { numeric: true }) * ordenInventario.direccion);
+            const inicioPagina = (paginaInventario - 1) * productosPorPagina;
+            const paginaVisible = visibles.slice(inicioPagina, inicioPagina + productosPorPagina);
+            cuerpo.innerHTML = paginaVisible.length ? paginaVisible.map(({ p, indice }) => {
+                const cantidad = Number(p.cantidad) || 0;
+                const minimo = Number(p.stockMinimo) || 0;
+                const porcentajeStock = minimo > 0 ? Math.min(100, Math.round((cantidad / minimo) * 100)) : 100;
+                const claseStock = cantidad <= 0 ? 'agotado' : cantidad <= minimo ? 'bajo' : '';
+                return `<tr>
+                <td>${escapar(p.nombre)}</td><td>${cantidad}<div class="progreso-stock ${claseStock}" title="Stock relativo al mínimo"><span style="width:${porcentajeStock}%"></span></div></td><td>${monedaLocal(p.precio)}</td><td>${monedaLocal(p.precioCompra)}</td>
+                <td>${monedaLocal(p.precio * p.cantidad)}</td><td>${monedaLocal((p.precio - p.precioCompra) * p.cantidad)}</td>
+                <td>${escapar(p.categoria)}</td><td>${escapar(p.estado)}</td><td>${escapar(p.proveedor)}</td><td>${p.vencimiento || '—'}</td>
+                <td class="acciones"><button class="btn-vender" data-vender="${indice}" type="button">Vender</button><button class="btn-editar" data-editar="${indice}" type="button">Editar</button><button class="btn-secundario" data-etiqueta="${indice}" type="button">🏷️ Etiqueta</button><button class="btn-eliminar" data-eliminar="${indice}" type="button">Eliminar</button></td>
+            </tr>`;
+            }).join('') : '<tr><td colspan="11" class="vacio">No hay productos registrados.</td></tr>';
+            document.getElementById('total-productos').textContent = productos.length;
+            document.getElementById('total-unidades').textContent = productos.reduce((total, p) => total + Number(p.cantidad || 0), 0);
+            document.getElementById('valor-inventario').textContent = monedaLocal(productos.reduce((total, p) => total + p.precio * p.cantidad, 0));
+            document.getElementById('total-alertas').textContent = productos.filter(p => Number(p.cantidad) <= Number(p.stockMinimo)).length;
+            renderizarPaginacion(visibles.length);
+            actualizarSelects();
+            actualizarComparativaProveedores();
+            actualizarResumenFinanciero();
+            actualizarAnalisisInteligente();
+            actualizarLogros();
+        }
+
+        function actualizarResumenFinanciero() {
+            const ingresos = ventas.reduce((suma, venta) => suma + Number(venta.total || 0), 0);
+            const ganancia = ventas.reduce((suma, venta) => suma + Number(venta.ganancia || 0), 0);
+            const estimada = productos.reduce((suma, p) => suma + (Number(p.precio || 0) - Number(p.precioCompra || 0)) * Number(p.cantidad || 0), 0);
+            document.getElementById('total-ganancia-estimada').textContent = monedaLocal(estimada);
+            document.getElementById('balance-total-ventas').textContent = monedaLocal(ingresos);
+            document.getElementById('balance-total-ganancia').textContent = monedaLocal(ganancia);
+        }
+
+        function actualizarAnalisisInteligente() {
+            const contenedor = document.getElementById('analisis-inteligente');
+            if (!contenedor) return;
+            const bajos = productos.filter(p => Number(p.cantidad || 0) <= Number(p.stockMinimo || 0));
+            const vencidos = productos.filter(p => p.vencimiento && new Date(`${p.vencimiento}T00:00:00`) < new Date());
+            const tarjetas = [];
+            tarjetas.push(bajos.length ? `<div class="recomendacion aviso-analisis"><strong>📦 Hay que comprar</strong>${bajos.length} producto(s) tienen poco stock o están agotados.</div>` : '<div class="recomendacion exito-analisis"><strong>✅ Stock en orden</strong>No hay productos por debajo del mínimo.</div>');
+            tarjetas.push(vencidos.length ? `<div class="recomendacion alerta-analisis"><strong>⏰ Revisar vencimientos</strong>${vencidos.length} producto(s) ya vencieron.</div>` : '<div class="recomendacion exito-analisis"><strong>✅ Fechas en orden</strong>No hay productos vencidos.</div>');
+            contenedor.innerHTML = tarjetas.join('');
+        }
+
+        function actualizarLogros() {
+            const contenedor = document.getElementById('lista-logros');
+            if (!contenedor) return;
+            const logros = [
+                [productos.length >= 1, '📦 Primer producto', 'Ya guardaste tu primer producto.'],
+                [productos.length >= 10, '🏪 Inventario completo', 'Tienes 10 o más productos registrados.'],
+                [ventas.length >= 1, '🛒 Primera venta', 'Ya registraste tu primera venta.'],
+                [ventas.length >= 10, '⭐ Buen ritmo', 'Ya registraste 10 o más ventas.']
+            ];
+            contenedor.innerHTML = logros.map(([hecho, titulo, texto]) => `<div class="recomendacion ${hecho ? 'exito-analisis' : ''}"><strong>${hecho ? '🏆' : '🔒'} ${titulo}</strong>${hecho ? texto : 'Sigue usando el sistema para conseguirlo.'}</div>`).join('');
+        }
+
+        document.getElementById('btn-imprimir-etiquetas').addEventListener('click', () => {
+            if (!productos.length) return notificar('No hay productos para imprimir.', true);
+            const ventana = window.open('', '_blank'); if (!ventana) return notificar('Permite ventanas emergentes para imprimir.', true);
+            ventana.document.write(`<html><head><title>Etiquetas</title><style>body{font-family:Arial}.etiqueta{display:inline-block;width:45%;border:1px solid #222;margin:8px;padding:12px;text-align:center;page-break-inside:avoid}</style></head><body>${productos.map(p => `<div class="etiqueta"><strong>${escapar(p.nombre)}</strong><br>${escapar(p.codigoBarras || 'Sin código')}<br>${monedaLocal(p.precio)}</div>`).join('')}</body></html>`); ventana.document.close(); ventana.focus(); ventana.print();
+        });
+        document.getElementById('formulario-producto').addEventListener('submit', evento => {
+            evento.preventDefault();
+            const campo = id => document.getElementById(id).value.trim();
+            const producto = { nombre:campo('nombre'), codigoBarras:campo('codigo-barras'), cantidad:Number(campo('cantidad')), precio:Number(campo('precio')), precioCompra:Number(campo('precio-compra')), descuentoDefecto:Number(campo('descuento-defecto')) || 0, stockMinimo:Number(campo('stock-minimo')), categoria:campo('categoria'), estado:campo('estado'), proveedor:campo('proveedor'), vencimiento:campo('vencimiento') };
+            const indice = Number(document.getElementById('indice-edicion').value);
+            if (!producto.nombre || !producto.categoria || !producto.estado || !producto.proveedor || producto.cantidad < 0 || producto.precio < 0 || producto.precioCompra < 0 || producto.stockMinimo < 0) return notificar('Revisa los datos del producto');
+            const esPro = localStorage.getItem('planInventify') === 'pro';
+            if (!esPro && indice < 0 && productos.length >= LIMITE_PLAN_GRATUITO) {
+                return notificar(`El plan gratuito permite hasta ${LIMITE_PLAN_GRATUITO} productos. Conoce INVENTIFY Pro desde el menú de usuario.`, true);
+            }
+            if (producto.precio < producto.precioCompra && !confirm('El precio de venta es menor que el costo. ¿Deseas guardar de todos modos?')) return;
+            const repetido = productos.some((p, i) => i !== indice && String(p.nombre).trim().toLowerCase() === producto.nombre.toLowerCase());
+            if (repetido && !confirm('Ya existe un producto con ese nombre. ¿Deseas guardarlo de todos modos?')) return;
+            producto.estado = producto.cantidad <= 0 ? 'Agotado' : (producto.estado === 'Agotado' ? 'Disponible' : producto.estado);
+            if (indice >= 0) productos[indice] = producto; else productos.push(producto);
+            guardarDatos(); guardarCopiaAutomatica(); evento.target.reset(); document.getElementById('indice-edicion').value = -1;
+            document.getElementById('cancelar-edicion').classList.add('oculto');
+            renderizar(); notificar('Producto guardado correctamente');
+        });
+
+        document.getElementById('lista-productos').addEventListener('click', evento => {
+            const boton = evento.target.closest('button');
+            if (!boton) return;
+            const indice = Number(boton.dataset.editar ?? boton.dataset.eliminar ?? boton.dataset.vender);
+            if (boton.dataset.etiqueta !== undefined) {
+                const producto = productos[indice];
+                const ventana = window.open('', '_blank', 'width=420,height=280');
+                if (ventana) { ventana.document.write(`<html><body style="font-family:Arial;text-align:center;padding:30px"><h2>${escapar(producto.nombre)}</h2><p>Código: ${escapar(producto.codigoBarras || 'Sin código')}</p><strong>${monedaLocal(producto.precio)}</strong><script>window.print()<\/script></body></html>`); ventana.document.close(); }
+                return;
+            }
+            if (boton.dataset.eliminar !== undefined) {
+                if (!confirm(`¿Seguro que deseas eliminar “${productos[indice]?.nombre || 'este producto'}”? Esta acción no se puede deshacer.`)) return;
+                movimientos.push({ texto: `Eliminado: ${productos[indice]?.nombre || 'Producto'}`, tipo: 'eliminacion', fecha: new Date().toISOString(), usuario: localStorage.getItem('usuarioInventario') || 'Sistema' });
+                productos.splice(indice, 1); guardarDatos(); guardarCopiaAutomatica(); renderizar(); renderizarHistorial(); notificar('Producto eliminado'); return;
+            }
+            if (boton.dataset.vender !== undefined) {
+                if (productos[indice].cantidad > 0) {
+                    productos[indice].cantidad--;
+                    const descuento = Math.min(100, Math.max(0, Number(productos[indice].descuentoDefecto) || 0));
+                    const precioFinal = Number(productos[indice].precio) * (1 - descuento / 100);
+                    ventas.push({ nombre:productos[indice].nombre, fecha:new Date().toISOString(), total:precioFinal, precioOriginal:productos[indice].precio, descuento, ganancia:precioFinal - Number(productos[indice].precioCompra || 0), usuario: localStorage.getItem('usuarioInventario') || 'Sistema' });
+                    productos[indice].estado = productos[indice].cantidad <= 0 ? 'Agotado' : 'Disponible';
+                    movimientos.push({ texto: `Venta: ${productos[indice].nombre} (1 unidad)`, tipo: 'venta', cantidad: 1, fecha: new Date().toISOString(), usuario: localStorage.getItem('usuarioInventario') || 'Sistema' });
+                    guardarDatos(); guardarCopiaAutomatica();
+                    renderizar();
+                    renderizarHistorial();
+                    notificar('Venta registrada');
+                } else notificar('No hay stock disponible');
+                return;
+            }
+            const p = productos[indice]; Object.entries({ nombre:p.nombre, 'codigo-barras':p.codigoBarras, cantidad:p.cantidad, precio:p.precio, 'precio-compra':p.precioCompra, 'descuento-defecto':p.descuentoDefecto, 'stock-minimo':p.stockMinimo, categoria:p.categoria, estado:p.estado, proveedor:p.proveedor, vencimiento:p.vencimiento }).forEach(([id, valor]) => document.getElementById(id).value = valor ?? '');
+            document.getElementById('indice-edicion').value = indice;
+            document.getElementById('cancelar-edicion').classList.remove('oculto');
+            cambiarPestana('pestana-inventario', document.querySelectorAll('.nav-tab')[1]);
+        });
+
+        document.getElementById('agregar-categoria').addEventListener('click', () => { const campo = document.getElementById('nueva-categoria'); const valor = campo.value.trim(); if (valor && !categorias.includes(valor)) categorias.push(valor); campo.value = ''; guardarDatos(); actualizarSelects(); document.getElementById('categoria').value = valor; });
+        ['buscador', 'filtro-categoria', 'filtro-estado', 'filtro-stock'].forEach(id => document.getElementById(id).addEventListener('input', () => { paginaInventario = 1; renderizar(); }));
+        document.querySelectorAll('th[data-orden]').forEach(encabezado => encabezado.addEventListener('click', () => { const clave = encabezado.dataset.orden; ordenInventario = { clave, direccion: ordenInventario.clave === clave ? -ordenInventario.direccion : 1 }; renderizar(); }));
+        document.getElementById('paginacion-inventario').addEventListener('click', evento => { const accion = evento.target.dataset.pagina; if (accion === 'anterior') paginaInventario--; if (accion === 'siguiente') paginaInventario++; renderizar(); });
+        const botonTema = document.getElementById('alternar-tema');
+        function actualizarTema() {
+            const oscuro = document.body.classList.contains('oscuro');
+            document.documentElement.dataset.tema = oscuro ? 'oscuro' : 'claro';
+            botonTema.textContent = oscuro ? '☀️ Modo claro' : '🌙 Modo oscuro';
+            botonTema.setAttribute('aria-pressed', String(oscuro));
+            botonTema.title = oscuro ? 'Cambiar al modo claro' : 'Cambiar al modo oscuro';
+            localStorage.setItem('temaInventario', oscuro ? 'oscuro' : 'claro');
+        }
+        botonTema.addEventListener('click', () => {
+            document.body.classList.toggle('oscuro');
+            actualizarTema();
+            // Actualiza las gráficas para conservar buen contraste con el tema elegido.
+            if (typeof actualizarGraficos === 'function') actualizarGraficos();
+            notificar(document.body.classList.contains('oscuro') ? 'Modo oscuro activado' : 'Modo claro activado');
+        });
+        if (localStorage.getItem('temaInventario') === 'oscuro') document.body.classList.add('oscuro');
+        actualizarTema();
+        function inicializarZonaHoraria() {
+            const selector = document.getElementById('selector-zona-horaria');
+            const zonas = ['local','UTC','America/Mexico_City','America/Bogota','America/Argentina/Buenos_Aires','Europe/Madrid'];
+            selector.innerHTML = zonas.map(zona => `<option value="${zona}">${zona === 'local' ? 'Zona del dispositivo' : zona}</option>`).join('');
+            selector.value = localStorage.getItem('zonaHorariaInventario') || 'local';
+            selector.addEventListener('change', () => { localStorage.setItem('zonaHorariaInventario', selector.value); renderizarHistorial(); notificar('Zona horaria actualizada'); });
+        }
+        inicializarSelectorMoneda();
+        inicializarZonaHoraria();
+        renderizar();
+        const mensajesMotivadores = [
+            '✨ Cada producto bien registrado te acerca a un negocio más organizado y exitoso.',
+            '🚀 Hoy es un buen día para tomar el control de tu inventario.',
+            '📈 Los pequeños avances de hoy construyen el crecimiento de mañana.',
+            '💪 Organiza tu inventario, trabaja con confianza y alcanza tus metas.',
+            '🌟 Tu esfuerzo cuenta: una tienda ordenada es una tienda preparada para crecer.',
+            '🎯 Con cada venta y cada registro, estás avanzando hacia un negocio mejor.',
+            '🧠 La información correcta te ayuda a tomar mejores decisiones.',
+            '🏆 Empieza paso a paso: los grandes negocios también comenzaron con un primer producto.'
+        ];
+
+        function mostrarMensajeMotivador() {
+            const elemento = document.getElementById('mensaje-motivador');
+            if (!elemento) return;
+            const anterior = Number(localStorage.getItem('ultimoMensajeMotivadorInventario'));
+            let indice = Math.floor(Math.random() * mensajesMotivadores.length);
+            if (mensajesMotivadores.length > 1 && indice === anterior) {
+                indice = (indice + 1) % mensajesMotivadores.length;
+            }
+            elemento.textContent = mensajesMotivadores[indice];
+            localStorage.setItem('ultimoMensajeMotivadorInventario', String(indice));
+        }
+
+        const modalBienvenida = document.getElementById('modal-bienvenida');
+        if (!localStorage.getItem('bienvenidaInventario')) {
+            mostrarMensajeMotivador();
+            modalBienvenida.classList.remove('oculto');
+        }
+        document.getElementById('btn-comenzar').addEventListener('click', () => {
+            localStorage.setItem('bienvenidaInventario', '1');
+            modalBienvenida.classList.add('oculto');
+        });
+        document.addEventListener('click', evento => { if (guardando && evento.target.closest('button, form')) { evento.preventDefault(); evento.stopPropagation(); notificar('Espera a que termine el guardado.', true); } }, true);
+
+        document.getElementById('btn-ver-plan-pro').addEventListener('click', () => {
+            const esPro = localStorage.getItem('planInventify') === 'pro';
+            if (esPro) {
+                notificar('Ya estás usando INVENTIFY Pro.');
+                return;
+            }
+            alert('INVENTIFY Pro incluye productos ilimitados, reportes avanzados, copias automáticas, gastos, metas y empleados. El pago real debe conectarse a un servidor y proveedor de pagos.');
+        });
+        document.getElementById('btn-cerrar-acceso').addEventListener('click', () => modalAcceso.classList.add('oculto'));
+        document.getElementById('btn-zona-admin').addEventListener('click', () => {
+            modalAcceso.classList.remove('oculto');
+            rolAcceso.value = 'Administrador';
+            usuarioAcceso.focus();
+        });
+
+        document.getElementById('cancelar-edicion').addEventListener('click', () => {
+            document.getElementById('formulario-producto').reset();
+            document.getElementById('indice-edicion').value = -1;
+            document.getElementById('cancelar-edicion').classList.add('oculto');
+        });
+
+        document.getElementById('formulario-ajuste').addEventListener('submit', evento => {
+            evento.preventDefault();
+            const indice = Number(document.getElementById('producto-ajuste').value);
+            const cantidad = Number(document.getElementById('cantidad-ajuste').value);
+            const tipo = document.getElementById('tipo-ajuste').value;
+            const producto = productos[indice];
+            if (!producto || !cantidad || (tipo === 'salida' && producto.cantidad < cantidad)) return notificar('No hay stock suficiente');
+            producto.cantidad += tipo === 'entrada' ? cantidad : -cantidad;
+            producto.estado = producto.cantidad <= 0 ? 'Agotado' : 'Disponible';
+            movimientos.push({ texto: `${tipo === 'entrada' ? 'Entrada' : 'Salida'}: ${producto.nombre} (${cantidad}) - ${document.getElementById('motivo-ajuste').value}`, tipo, cantidad, fecha: new Date().toISOString(), usuario: localStorage.getItem('usuarioInventario') || 'Sistema' });
+            guardarDatos(); guardarCopiaAutomatica(); evento.target.reset(); renderizar(); notificar('Ajuste guardado');
+        });
+
+        // Dibuja el historial de ventas y el registro de movimientos.
+        function renderizarHistorial() {
+            const listaVentas = document.getElementById('lista-ventas');
+            const listaMovimientos = document.getElementById('lista-movimientos');
+            listaVentas.innerHTML = ventas.length ? ventas.slice().reverse().map((venta, posicion) => `<li><strong>${escapar(venta.nombre)}</strong> — ${monedaLocal(venta.total)} — ${new Date(venta.fecha).toLocaleString()}<br><small class="nota">Ganancia: ${monedaLocal(venta.ganancia)} · ${escapar(venta.usuario || 'Sistema')}</small> <button class="btn-secundario" type="button" data-devolver="${ventas.length - 1 - posicion}">↩️ Devolver</button></li>`).join('') : '<li class="vacio">No hay ventas registradas.</li>';
+            listaMovimientos.innerHTML = movimientos.length ? movimientos.slice().reverse().map(movimiento => `<li>${escapar(movimiento.texto || movimiento)}<br><small class="nota">${movimiento.fecha ? new Date(movimiento.fecha).toLocaleString() : ''} · ${escapar(movimiento.usuario || 'Sistema')}</small></li>`).join('') : '<li class="vacio">No hay movimientos registrados.</li>';
+            const conteo = ventas.reduce((resultado, venta) => { resultado[venta.nombre] = (resultado[venta.nombre] || 0) + 1; return resultado; }, {});
+            const ordenados = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+            document.getElementById('producto-mas-vendido').textContent = ordenados.length ? `Más vendido: ${ordenados[0][0]} (${ordenados[0][1]} unidad(es))` : 'Todavía no hay productos vendidos.';
+            const menos = ordenados.slice().sort((a, b) => a[1] - b[1])[0];
+            document.getElementById('producto-menos-vendido').textContent = menos ? `Menos vendido: ${menos[0]} (${menos[1]} unidad(es))` : '';
+        }
+        document.getElementById('lista-ventas').addEventListener('click', evento => {
+            const boton = evento.target.closest('[data-devolver]');
+            if (!boton) return;
+            const venta = ventas[Number(boton.dataset.devolver)];
+            const producto = productos.find(p => p.nombre === venta?.nombre);
+            if (!venta || !producto || !confirm(`¿Registrar devolución de ${venta.nombre}?`)) return;
+            producto.cantidad += 1;
+            producto.estado = 'Disponible';
+            ventas.splice(Number(boton.dataset.devolver), 1);
+            movimientos.push({ texto: `Devolución: ${producto.nombre} (1 unidad)`, tipo: 'devolucion', cantidad: 1, fecha: new Date().toISOString(), usuario: localStorage.getItem('usuarioInventario') || 'Sistema' });
+            guardarDatos(); guardarCopiaAutomatica(); renderizar(); renderizarHistorial(); notificar('Devolución registrada');
+        });
+        renderizarHistorial();
+        ['pestana-ventas', 'pestana-movimientos'].forEach(id => document.querySelector(`[onclick*="${id}"]`).addEventListener('click', renderizarHistorial));
+
+        // Carrito de ventas con varias unidades, descuentos y comprobante.
+        actualizarSelectorCarrito();
+        renderizarCarrito();
+        document.getElementById('formulario-carrito').addEventListener('submit', evento => {
+            evento.preventDefault();
+            const indice = Number(document.getElementById('producto-carrito').value);
+            const producto = productos[indice];
+            const cantidad = Number(document.getElementById('cantidad-carrito').value);
+            const descuento = Math.min(100, Math.max(0, Number(document.getElementById('descuento-carrito').value) || producto?.descuentoDefecto || 0));
+            if (!producto || cantidad < 1 || cantidad > Number(producto.cantidad)) return notificar('La cantidad supera el stock disponible.', true);
+            const existente = carritoVenta.find(item => item.indice === indice && item.descuento === descuento);
+            if (existente) { if (existente.cantidad + cantidad > producto.cantidad) return notificar('La cantidad supera el stock disponible.', true); existente.cantidad += cantidad; existente.total = existente.cantidad * existente.precioFinal; }
+            else { const precioFinal = Number(producto.precio) * (1 - descuento / 100); carritoVenta.push({ indice, nombre: producto.nombre, cantidad, descuento, precioFinal, precioCompra: Number(producto.precioCompra || 0), total: cantidad * precioFinal }); }
+            evento.target.reset(); document.getElementById('cantidad-carrito').value = 1; document.getElementById('descuento-carrito').value = 0; renderizarCarrito();
+        });
+        document.getElementById('lista-carrito').addEventListener('click', evento => { const boton = evento.target.closest('[data-quitar-carrito]'); if (boton) { carritoVenta.splice(Number(boton.dataset.quitarCarrito), 1); renderizarCarrito(); } });
+        document.getElementById('btn-confirmar-carrito').addEventListener('click', () => {
+            if (!carritoVenta.length) return;
+            guardarEstadoDeshacer();
+            const fecha = new Date().toISOString();
+            carritoVenta.forEach(item => { const producto = productos[item.indice]; if (!producto) return; producto.cantidad -= item.cantidad; producto.estado = producto.cantidad <= 0 ? 'Agotado' : 'Disponible'; ventas.push({ nombre: producto.nombre, fecha, total: item.total, precioOriginal: producto.precio, descuento: item.descuento, ganancia: (item.precioFinal - item.precioCompra) * item.cantidad, cantidad: item.cantidad, usuario: localStorage.getItem('usuarioInventario') || 'Sistema' }); movimientos.push({ texto: `Venta: ${producto.nombre} (${item.cantidad} unidad(es))`, tipo: 'venta', cantidad: item.cantidad, fecha, usuario: localStorage.getItem('usuarioInventario') || 'Sistema' }); });
+            ultimaVentaComprobante = { items: carritoVenta.map(item => ({ ...item })), total: carritoVenta.reduce((s, item) => s + item.total, 0), fecha };
+            carritoVenta = []; guardarDatos(); guardarCopiaAutomatica(); renderizar(); renderizarHistorial(); actualizarSelectorCarrito(); renderizarCarrito(); notificar('Venta completada correctamente');
+        });
+        document.getElementById('btn-deshacer').addEventListener('click', deshacerUltimaAccion);
+        document.getElementById('btn-comprobante-venta').addEventListener('click', () => {
+            if (!ultimaVentaComprobante) return notificar('Todavía no hay una venta nueva para imprimir.', true);
+            const nombreDestinatario = prompt('¿A nombre de quién quieres que salga el recibo?', 'Cliente general');
+            if (nombreDestinatario === null) return;
+            const nombre = escapar(nombreDestinatario.trim() || 'Cliente general');
+            const ventana = window.open('', '_blank');
+            if (!ventana) return notificar('Permite ventanas emergentes para imprimir.', true);
+            ventana.document.write(`<html><head><title>INVENTIFY - Comprobante de venta</title></head><body style="font-family:Arial;padding:25px"><h2>Comprobante de venta</h2><p><strong>Cliente:</strong> ${nombre}</p><p>${new Date(ultimaVentaComprobante.fecha).toLocaleString()}</p>${ultimaVentaComprobante.items.map(i => `<p>${escapar(i.nombre)} × ${i.cantidad}: ${monedaLocal(i.total)}</p>`).join('')}<hr><h3>Total: ${monedaLocal(ultimaVentaComprobante.total)}</h3><script>window.print()<\/script></body></html>`);
+            ventana.document.close();
+        });
+        document.getElementById('btn-exportar-ventas').addEventListener('click', () => { const filas = [['Producto','Cantidad','Total','Ganancia','Fecha','Usuario'], ...ventas.map(v => [v.nombre, v.cantidad || 1, v.total, v.ganancia, v.fecha, v.usuario || 'Sistema'])]; descargarArchivo(`ventas-${new Date().toISOString().slice(0,10)}.csv`, '\ufeff' + filas.map(f => f.map(v => `"${String(v ?? '').replaceAll('"','""')}"`).join(',')).join('\n'), 'text/csv;charset=utf-8'); });
+
+        document.getElementById('formulario-proveedor').addEventListener('submit', evento => {
+            evento.preventDefault();
+            const proveedor = { nombre: document.getElementById('nuevo-proveedor-nombre').value.trim(), telefono: document.getElementById('nuevo-proveedor-telefono').value.trim(), correo: document.getElementById('nuevo-proveedor-correo').value.trim(), direccion: document.getElementById('nuevo-proveedor-direccion').value.trim(), diasEntrega: Number(document.getElementById('nuevo-proveedor-entrega').value) || 0, notas: document.getElementById('nuevo-proveedor-notas').value.trim(), fecha: new Date().toISOString() };
+            const proveedores = leer('proveedoresInventario', []); proveedores.push(proveedor); localStorage.setItem('proveedoresInventario', JSON.stringify(proveedores)); evento.target.reset(); notificar('Proveedor guardado correctamente');
+        });
+        const selectorBloqueo = document.getElementById('selector-bloqueo');
+        selectorBloqueo.value = localStorage.getItem('bloqueoAdminInventario') || '0';
+        selectorBloqueo.addEventListener('change', () => { localStorage.setItem('bloqueoAdminInventario', selectorBloqueo.value); notificar('Bloqueo automático actualizado'); });
+        let temporizadorBloqueo;
+        function reiniciarBloqueo() { clearTimeout(temporizadorBloqueo); const minutos = Number(selectorBloqueo.value); if (minutos > 0 && document.body.classList.contains('es-admin')) temporizadorBloqueo = setTimeout(() => { document.body.classList.remove('es-admin'); notificar('Zona administrativa bloqueada por inactividad', true); }, minutos * 60000); }
+        ['click','keydown','touchstart'].forEach(evento => document.addEventListener(evento, reiniciarBloqueo, { passive:true }));
+        reiniciarBloqueo();
+
+        // Conexiones adicionales para las funciones de configuración y reportes.
+        const datosExtra = leer('datosExtraInventario', { gastos: [], meta: 0, copias: [] });
+        const gastos = Array.isArray(datosExtra.gastos) ? datosExtra.gastos : [];
+        let metaMensual = Number(datosExtra.meta) || 0;
+        let copiasAutomaticas = Array.isArray(datosExtra.copias) ? datosExtra.copias : [];
+        const guardarExtras = () => {
+            try {
+                localStorage.setItem('datosExtraInventario', JSON.stringify({ gastos, meta: metaMensual, copias: copiasAutomaticas }));
+                return true;
+            } catch (error) {
+                console.error('No se pudieron guardar los datos extra:', error);
+                notificar('No hay espacio para guardar los datos extra.', true);
                 return false;
             }
         };
-        const diasHasta = fecha => fecha ? Math.ceil((new Date(fecha + 'T23:59:59') - new Date()) / 86400000) : Infinity;
-        const alertaVencimiento = fecha => fecha && diasHasta(fecha) <= 30;
-        const seguro = valor => String(valor ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-        const fechaTexto = fecha => fecha ? new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES') : '—';
-        const estaVencido = fecha => fecha && new Date(fecha + 'T23:59:59') < new Date();
-        let temporizadorNotificacion;
-        function notificar(mensaje, error=false) {
-            const elemento = $('notificacion');
-            elemento.textContent = mensaje;
-            elemento.className = 'visible' + (error ? ' error' : '');
-            clearTimeout(temporizadorNotificacion);
-            temporizadorNotificacion = setTimeout(() => elemento.className = '', 2800);
-        }
-        function dibujarGrafico(id, datos, colores) {
-            const canvas = $(id), contexto = canvas.getContext('2d');
-            const ancho = canvas.clientWidth || 400, alto = 250, escala = window.devicePixelRatio || 1;
-            canvas.width = ancho * escala; canvas.height = alto * escala; contexto.setTransform(escala, 0, 0, escala, 0, 0);
-            contexto.clearRect(0, 0, ancho, alto);
-            const valores = Object.values(datos), maximo = Math.max(...valores, 1), base = alto - 42;
-            const columna = Math.max(28, (ancho - 45) / Math.max(valores.length, 1) - 12);
-            contexto.font = '12px Segoe UI'; contexto.textAlign = 'center';
-            Object.entries(datos).forEach(([etiqueta, valor], indice) => {
-                const x = 35 + indice * ((ancho - 45) / Math.max(valores.length, 1)) + 8;
-                const altura = valor / maximo * (alto - 78), y = base - altura;
-                contexto.fillStyle = colores[indice % colores.length]; contexto.fillRect(x, y, columna, altura);
-                contexto.fillStyle = '#2c3e50'; contexto.fillText(String(valor), x + columna / 2, y - 6);
-                contexto.save(); contexto.translate(x + columna / 2, base + 15); contexto.rotate(-Math.PI / 6); contexto.fillText(etiqueta, 0, 0); contexto.restore();
-            });
-            contexto.strokeStyle = '#ccd3da'; contexto.beginPath(); contexto.moveTo(28, base); contexto.lineTo(ancho - 10, base); contexto.stroke();
-        }
-        function actualizarGraficos() {
-            const categorias = {}, estados = {};
-            inventario.forEach(p => { const categoria=p.categoria||'Sin categoría', estado=p.estado||'Sin estado'; categorias[categoria]=(categorias[categoria]||0)+1; estados[estado]=(estados[estado]||0)+1; });
-            dibujarGrafico('grafico-categoria', categorias, ['#2980b9','#27ae60','#f39c12','#8e44ad','#7f8c8d']);
-            dibujarGrafico('grafico-estado', estados, ['#27ae60','#e74c3c','#f39c12','#7f8c8d']);
+        function mostrarCopiasAutomaticas() {
+            const lista = document.getElementById('lista-copias-automaticas');
+            if (!lista) return;
+            lista.innerHTML = copiasAutomaticas.length ? copiasAutomaticas.map((copia, indice) => `<li><span>${new Date(copia.fecha).toLocaleString()}<br><small>${copia.productos} productos · ${copia.ventas} ventas</small></span>${copia.datos ? `<button class="btn-secundario" type="button" data-restaurar-copia="${indice}">Restaurar</button>` : ''}</li>`).join('') : '<li class="nota">Todavía no hay copias automáticas.</li>';
         }
 
-        function registrarMovimiento(producto, tipo, cantidad) {
-            producto.movimientos.push({ tipo, cantidad, fecha:new Date().toLocaleString('es-ES') });
-        }
-        function actualizarResumen() {
-            $('total-productos').textContent = inventario.length;
-            $('total-unidades').textContent = inventario.reduce((s,p)=>s+p.cantidad,0);
-            $('valor-inventario').textContent = '$' + inventario.reduce((s,p)=>s+p.cantidad*p.precio,0).toFixed(2);
-            $('total-alertas').textContent = inventario.filter(p=>p.cantidad<=p.stockMinimo || alertaVencimiento(p.vencimiento)).length;
-        }
-        function productosFiltrados() {
-            const texto = $('buscador').value.toLowerCase(), cat=$('filtro-categoria').value, est=$('filtro-estado').value, stock=$('filtro-stock').value;
-            return inventario.map((p,i)=>({p,i})).filter(({p}) => {
-                const cumpleStock = !stock || (stock==='bajo'&&p.cantidad<=p.stockMinimo) || (stock==='agotado'&&p.cantidad===0) || (stock==='vencido'&&estaVencido(p.vencimiento)) || (stock==='proximo'&&diasHasta(p.vencimiento)>=0&&diasHasta(p.vencimiento)<=30);
-                return (!texto || (p.nombre+' '+p.proveedor).toLowerCase().includes(texto)) && (!cat||p.categoria===cat) && (!est||p.estado===est) && cumpleStock;
-            }).sort((a,b)=>{
-                let x=a.p[orden.campo], y=b.p[orden.campo]; if(typeof x==='string') {x=x.toLowerCase();y=String(y).toLowerCase();} return (x>y?1:x<y?-1:0)*(orden.asc?1:-1);
-            });
-        }
-        function actualizarTabla() {
-            const filas = productosFiltrados();
-            listaProductos.innerHTML = filas.length ? filas.map(({p,i}) => {
-                const alerta = p.cantidad <= p.stockMinimo, vencido=estaVencido(p.vencimiento), proximo=alertaVencimiento(p.vencimiento)&&!vencido;
-                const ganancia = p.precio - p.precioCompra;
-                return `<tr><td><strong>${seguro(p.nombre)}</strong></td><td class="${alerta?'alerta':''}">${p.cantidad}${alerta?' ⚠️':''}</td><td>$${p.precio.toFixed(2)}</td><td>$${p.precioCompra.toFixed(2)}</td><td>$${(p.cantidad*p.precio).toFixed(2)}</td><td>$${(p.cantidad*ganancia).toFixed(2)}</td><td>${seguro(p.categoria||'Sin categoría')}</td><td class="estado-${seguro((p.estado||'').toLowerCase())}">${seguro(p.estado||'Sin estado')}</td><td>${seguro(p.proveedor)||'—'}</td><td class="${vencido?'vencido':proximo?'alerta':''}">${fechaTexto(p.vencimiento)}${vencido?' (vencido)':proximo?' (próximo)':''}</td><td class="acciones"><button class="btn-editar" onclick="editarProducto(${i})">Editar</button><button class="btn-vender" onclick="registrarVenta(${i})">Registrar venta</button><button class="btn-mov" onclick="hacerMovimiento(${i})">Movimiento</button><button class="btn-eliminar" onclick="eliminarProducto(${i})">Eliminar</button></td></tr>`;
-            }).join('') : '<tr><td colspan="11" class="vacio">No hay productos que coincidan con los filtros.</td></tr>';
-            actualizarResumen();
-            actualizarGraficos();
-        }
-        function actualizarMovimientos() {
-            const datos=[]; inventario.forEach(p => p.movimientos.forEach(m => datos.push({...m,nombre:p.nombre})));
-            datos.reverse(); movimientosEl.innerHTML=datos.length ? datos.slice(0,30).map(m=>`<li><strong>${seguro(m.tipo)}</strong> de ${seguro(m.cantidad)} unidad(es) — ${seguro(m.nombre)} <span class="nota">(${seguro(m.fecha)})</span></li>`).join('') : '<li class="nota">Todavía no hay movimientos.</li>';
-            ventasEl.innerHTML=ventas.length ? ventas.slice().reverse().slice(0,30).map(v=>`<li><strong>${seguro(v.nombre)}</strong>: ${seguro(v.cantidad)} unidad(es) — $${v.total.toFixed(2)} <span class="nota">(${seguro(v.fecha)})</span></li>`).join('') : '<li class="nota">Todavía no hay ventas.</li>';
-        }
-        formulario.addEventListener('submit', e => { e.preventDefault(); const i=Number($('indice-edicion').value), datos={nombre:$('nombre').value.trim(),cantidad:Number($('cantidad').value),precio:Number($('precio').value),precioCompra:Number($('precio-compra').value),stockMinimo:Number($('stock-minimo').value),categoria:$('categoria').value,estado:$('estado').value,proveedor:$('proveedor').value.trim(),vencimiento:$('vencimiento').value};
-            if(i<0) { datos.movimientos=[]; registrarMovimiento(datos,'Entrada inicial',datos.cantidad); inventario.push(datos); } else { const anterior=inventario[i].cantidad; inventario[i]={...inventario[i],...datos}; if(anterior!==datos.cantidad) registrarMovimiento(inventario[i],'Ajuste',datos.cantidad-anterior); cancelarEdicion(); }
-            guardar(); actualizarTabla(); actualizarMovimientos();
-            notificar(i < 0 ? 'Producto agregado correctamente.' : 'Producto actualizado correctamente.');
-            if(i<0) formulario.reset(); $('stock-minimo').value=0;
+        document.getElementById('lista-copias-automaticas').addEventListener('click', evento => {
+            const boton = evento.target.closest('[data-restaurar-copia]');
+            if (!boton) return;
+            const copia = copiasAutomaticas[Number(boton.dataset.restaurarCopia)];
+            if (!copia?.datos || !confirm('Se reemplazarán los datos actuales por esta copia. ¿Deseas continuar?')) return;
+            productos = Array.isArray(copia.datos.productos) ? copia.datos.productos : [];
+            categorias = Array.isArray(copia.datos.categorias) ? copia.datos.categorias : [];
+            ventas = Array.isArray(copia.datos.ventas) ? copia.datos.ventas : [];
+            movimientos = Array.isArray(copia.datos.movimientos) ? copia.datos.movimientos : [];
+            gastos.splice(0, gastos.length, ...(Array.isArray(copia.datos.gastos) ? copia.datos.gastos : []));
+            metaMensual = Number(copia.datos.metaMensual) || 0;
+            window.productos = productos; window.inventario = productos;
+            guardarDatos(); guardarExtras(); renderizar(); renderizarHistorial(); actualizarAdministracion();
+            notificar('Copia automática restaurada');
         });
-        window.editarProducto = i => { const p=inventario[i]; Object.keys({nombre:1,cantidad:1,precio:1,precioCompra:1,stockMinimo:1,categoria:1,estado:1,proveedor:1,vencimiento:1}).forEach(k=>$(k==='stockMinimo'?'stock-minimo':k==='precioCompra'?'precio-compra':k).value=p[k]??''); $('indice-edicion').value=i; $('boton-formulario').textContent='Guardar cambios'; $('cancelar-edicion').classList.remove('oculto'); window.scrollTo({top:0,behavior:'smooth'}); };
-        function cancelarEdicion() { formulario.reset(); $('indice-edicion').value=-1; $('boton-formulario').textContent='Agregar producto'; $('cancelar-edicion').classList.add('oculto'); $('stock-minimo').value=0; }
-        $('cancelar-edicion').onclick=cancelarEdicion;
-        window.eliminarProducto = i => {
-            if (confirm(`¿Eliminar "${inventario[i].nombre}"?`)) {
-                inventario.splice(i,1); guardar(); actualizarTabla(); actualizarMovimientos();
-                notificar('Producto eliminado correctamente.');
-            }
-        };
-        let indiceVenta = -1;
-        function cerrarModalVenta() {
-            $('modal-venta').classList.add('oculto');
-            indiceVenta = -1;
+        function guardarCopiaAutomatica() {
+            if (guardando) return;
+            // Guarda una instantánea real, no solo el número de productos.
+            copiasAutomaticas.unshift({
+                fecha: new Date().toISOString(),
+                productos: productos.length,
+                ventas: ventas.length,
+                datos: { productos, categorias, ventas, movimientos, gastos, metaMensual }
+            });
+            copiasAutomaticas = copiasAutomaticas.slice(0, 5);
+            try { guardarExtras(); mostrarCopiasAutomaticas(); }
+            catch (error) { notificar('No se pudo crear la copia automática.', true); }
         }
-        window.registrarVenta = i => {
-            const p = inventario[i];
-            if (p.cantidad < 1) return notificar('No hay unidades disponibles para vender.', true);
-            indiceVenta = i;
-            $('detalle-venta').textContent = `${p.nombre} — disponibles: ${p.cantidad} unidad(es)`;
-            $('cantidad-venta').value = 1;
-            $('cantidad-venta').max = p.cantidad;
-            $('modal-venta').classList.remove('oculto');
-            $('cantidad-venta').focus();
-            $('cantidad-venta').select();
-        };
-        $('cancelar-venta').onclick = cerrarModalVenta;
-        $('modal-venta').onclick = e => { if (e.target.id === 'modal-venta') cerrarModalVenta(); };
-        $('confirmar-venta').onclick = () => {
-            const p = inventario[indiceVenta], cantidad = Number($('cantidad-venta').value);
-            if (!p || !Number.isInteger(cantidad) || cantidad <= 0 || cantidad > p.cantidad) {
-                return notificar(`Cantidad no válida. Debe ser un número entero entre 1 y ${p?.cantidad || 0}.`, true);
+        mostrarCopiasAutomaticas();
+
+        function actualizarAdministracion() {
+            const ingresos = ventas.reduce((suma, venta) => suma + Number(venta.total || 0), 0);
+            const gastosTotal = gastos.reduce((suma, gasto) => suma + Number(gasto.monto || 0), 0);
+            const hoy = new Date().toISOString().slice(0, 10);
+            const ventasHoy = ventas.filter(venta => String(venta.fecha || '').slice(0, 10) === hoy)
+                .reduce((suma, venta) => suma + Number(venta.total || 0), 0);
+            const actualizar = (id, valor) => { const elemento = document.getElementById(id); if (elemento) elemento.textContent = valor; };
+            actualizar('ganancia-real', monedaLocal(ingresos - gastosTotal));
+            actualizar('total-gastos', monedaLocal(gastosTotal));
+            actualizar('ventas-hoy', monedaLocal(ventasHoy));
+            const porcentaje = metaMensual > 0 ? Math.min(100, (ingresos / metaMensual) * 100) : 0;
+            actualizar('progreso-meta', `${porcentaje.toFixed(1)}%`);
+            const barra = document.getElementById('barra-meta-progreso');
+            if (barra) barra.style.width = `${porcentaje}%`;
+        }
+
+        function descargarArchivo(nombre, contenido, tipo = 'text/plain') {
+            const enlace = document.createElement('a');
+            enlace.href = URL.createObjectURL(new Blob([contenido], { type: tipo }));
+            enlace.download = nombre;
+            enlace.click();
+            setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+        }
+
+        document.getElementById('limpiar-filtros').addEventListener('click', () => {
+            ['buscador', 'filtro-categoria', 'filtro-estado', 'filtro-stock'].forEach(id => { document.getElementById(id).value = ''; });
+            renderizar();
+        });
+
+                
+        document.getElementById('btn-exportar').addEventListener('click', () => {
+            const respaldo = { productos, categorias, ventas, movimientos, gastos, metaMensual, fecha: new Date().toISOString() };
+            descargarArchivo(`respaldo-inventario-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(respaldo, null, 2), 'application/json');
+            notificar('Copia de seguridad exportada');
+        });
+        document.getElementById('btn-importar').addEventListener('click', () => document.getElementById('archivo-importar').click());
+        document.getElementById('archivo-importar').addEventListener('change', evento => {
+            const archivo = evento.target.files[0];
+            if (!archivo) return;
+            const lector = new FileReader();
+            lector.onload = () => {
+                try {
+                    const respaldo = JSON.parse(lector.result);
+                    if (!Array.isArray(respaldo.productos) || !Array.isArray(respaldo.ventas) || !Array.isArray(respaldo.movimientos)) throw new Error('Formato inválido');
+                    if (!confirm('Importar reemplazará el inventario actual. ¿Deseas continuar?')) return;
+                    productos = respaldo.productos; categorias = Array.isArray(respaldo.categorias) ? respaldo.categorias : [];
+                    ventas = Array.isArray(respaldo.ventas) ? respaldo.ventas : []; movimientos = Array.isArray(respaldo.movimientos) ? respaldo.movimientos : [];
+                    gastos.splice(0, gastos.length, ...(Array.isArray(respaldo.gastos) ? respaldo.gastos : []));
+                    metaMensual = Number(respaldo.metaMensual) || 0;
+                    window.productos = productos; window.inventario = productos;
+                    guardarDatos(); guardarExtras(); renderizar(); renderizarHistorial(); actualizarAdministracion();
+                    notificar('Datos importados correctamente');
+                } catch (error) { notificar('El archivo no es una copia válida'); }
+                evento.target.value = '';
+            };
+            lector.readAsText(archivo);
+        });
+
+        document.getElementById('formulario-gasto').addEventListener('submit', evento => {
+            evento.preventDefault();
+            gastos.push({ descripcion: document.getElementById('gasto-descripcion').value.trim(), monto: Number(document.getElementById('gasto-monto').value), tipo: document.getElementById('gasto-tipo').value, fecha: new Date().toISOString() });
+            guardarExtras(); evento.target.reset(); actualizarAdministracion(); notificar('Gasto registrado');
+        });
+        document.getElementById('formulario-meta').addEventListener('submit', evento => {
+            evento.preventDefault(); metaMensual = Number(document.getElementById('meta-monto').value) || 0;
+            guardarExtras(); actualizarAdministracion(); notificar('Meta mensual guardada');
+        });
+        document.getElementById('formulario-empleado').addEventListener('submit', evento => {
+            evento.preventDefault();
+            const empleados = leer('empleadosInventario', []);
+            empleados.push({ usuario: document.getElementById('empleado-usuario').value.trim(), clave: document.getElementById('empleado-clave').value, fecha: new Date().toISOString() });
+            localStorage.setItem('empleadosInventario', JSON.stringify(empleados)); evento.target.reset(); notificar('Empleado creado correctamente');
+        });
+
+        // Genera órdenes de compra, reportes de inventario o informes mensuales.
+        function generarReporte(tipo) {
+            const fecha = new Date().toLocaleString();
+            let contenido = `INVENTIFY\nGenerado: ${fecha}\n\n`;
+            if (!productos.length && tipo !== 'mensual') notificar('No hay productos para incluir en el reporte.', true);
+            if (tipo === 'orden-compra') {
+                const bajos = productos.filter(p => Number(p.cantidad) <= Number(p.stockMinimo));
+                contenido += bajos.length ? bajos.map(p => `${p.nombre} | Cantidad: ${p.cantidad} | Mínimo: ${p.stockMinimo} | Proveedor: ${p.proveedor} | Precio: ${monedaLocal(p.precioCompra)}`).join('\n') : 'No hay productos con stock bajo.';
+            } else {
+                contenido += productos.map(p => `${p.nombre} | Stock: ${p.cantidad} | Venta: ${monedaLocal(p.precio)} | Proveedor: ${p.proveedor}`).join('\n') || 'No hay productos registrados.';
+                if (tipo === 'mensual') {
+                    const mes = new Date().toISOString().slice(0, 7);
+                    const ventasMes = ventas.filter(v => String(v.fecha || '').slice(0, 7) === mes);
+                    const ingresosMes = ventasMes.reduce((s, v) => s + Number(v.total || 0), 0);
+                    const gananciaMes = ventasMes.reduce((s, v) => s + Number(v.ganancia || 0), 0);
+                    const gastosMes = gastos.filter(g => String(g.fecha || '').slice(0, 7) === mes).reduce((s, g) => s + Number(g.monto || 0), 0);
+                    const conteo = ventasMes.reduce((r, v) => { r[v.nombre] = (r[v.nombre] || 0) + 1; return r; }, {});
+                    const masVendido = Object.entries(conteo).sort((a, b) => b[1] - a[1])[0];
+                    contenido += `\n\nINFORME DEL MES ${mes}\nVentas: ${ventasMes.length}\nIngresos: ${monedaLocal(ingresosMes)}\nGanancias: ${monedaLocal(gananciaMes)}\nGastos: ${monedaLocal(gastosMes)}\nResultado: ${monedaLocal(gananciaMes - gastosMes)}\nProducto más vendido: ${masVendido ? `${masVendido[0]} (${masVendido[1]} unidades)` : 'Ninguno'}\nProductos con stock bajo: ${productos.filter(p => Number(p.cantidad) <= Number(p.stockMinimo)).length}`;
+                }
             }
-            p.cantidad -= cantidad;
-            ventas.push({nombre:p.nombre, cantidad, total:p.precio * cantidad, fecha:new Date().toLocaleString('es-ES')});
-            registrarMovimiento(p, 'Venta', cantidad);
-            if (p.cantidad === 0) p.estado = 'Agotado';
-            guardar(); actualizarTabla(); actualizarMovimientos(); cerrarModalVenta();
-            notificar(`Venta registrada: ${cantidad} unidad(es) de ${p.nombre}.`);
-        };
-        window.hacerMovimiento = i => { const p=inventario[i], tipo=prompt('Escribe Entrada o Salida:', 'Salida'); if(!tipo || !['entrada','salida'].includes(tipo.toLowerCase())) return; const cantidad=Number(prompt('Cantidad del movimiento:', '1')); if(!Number.isFinite(cantidad)||cantidad<=0 || (tipo.toLowerCase()==='salida'&&cantidad>p.cantidad)) return alert('Cantidad no válida.'); p.cantidad += tipo.toLowerCase()==='entrada'?cantidad:-cantidad; registrarMovimiento(p,tipo[0].toUpperCase()+tipo.slice(1).toLowerCase(),cantidad); if (p.cantidad === 0) p.estado = 'Agotado'; else if (tipo.toLowerCase() === 'entrada' && p.estado === 'Agotado') p.estado = 'Disponible'; guardar(); actualizarTabla(); actualizarMovimientos(); };
-        $('alternar-tema').onclick=()=>{ document.body.classList.toggle('oscuro'); const oscuro=document.body.classList.contains('oscuro'); try { localStorage.setItem('tema', oscuro?'oscuro':'claro'); } catch {} $('alternar-tema').textContent=oscuro?'☀️ Modo claro':'🌙 Modo oscuro'; };
-        if(leerAlmacenamiento('tema')==='oscuro') $('alternar-tema').click();
-        document.querySelectorAll('th[data-orden]').forEach(th=>th.onclick=()=>{ const campo=th.dataset.orden; orden={campo,asc:orden.campo===campo?!orden.asc:true}; actualizarTabla(); });
-        ['buscador','filtro-categoria','filtro-estado','filtro-stock'].forEach(id=>$(id).addEventListener('input',actualizarTabla));
-        $('limpiar-filtros').onclick=()=>{ $('buscador').value=''; $('filtro-categoria').value=''; $('filtro-estado').value=''; $('filtro-stock').value=''; actualizarTabla(); };
-        actualizarTabla(); actualizarMovimientos();
-        window.addEventListener('resize', actualizarGraficos);
+            const nombre = `${tipo}-inventario-${Date.now()}`;
+            if (window.jspdf?.jsPDF) {
+                const documento = new window.jspdf.jsPDF();
+                documento.setFontSize(14);
+                documento.text('INVENTIFY', 14, 18);
+                documento.setFontSize(10);
+                documento.text(`Generado: ${fecha}`, 14, 26);
+                const lineas = documento.splitTextToSize(contenido, 180);
+                documento.text(lineas, 14, 36);
+                documento.save(`${nombre}.pdf`);
+            } else {
+                descargarArchivo(`${nombre}.txt`, contenido);
+            }
+            notificar(window.jspdf?.jsPDF ? 'PDF generado' : 'Reporte generado como texto');
+        }
+        document.getElementById('btn-compras-pdf').addEventListener('click', () => generarReporte('orden-compra'));
+        document.getElementById('btn-reporte-pdf').addEventListener('click', () => generarReporte('reporte'));
+        document.getElementById('btn-informe-mensual').addEventListener('click', () => generarReporte('mensual'));
+
+        // Conserva las instancias de Chart.js para destruirlas antes de redibujar.
+        let graficos = {};
+        function actualizarGraficos() {
+            if (typeof Chart === 'undefined') return;
+            const crear = (id, configuracion) => {
+                const lienzo = document.getElementById(id); if (!lienzo) return;
+                if (graficos[id]) graficos[id].destroy();
+                graficos[id] = new Chart(lienzo, configuracion);
+            };
+            const agrupar = clave => productos.reduce((r, p) => { const valor = p[clave] || 'Sin datos'; r[valor] = (r[valor] || 0) + 1; return r; }, {});
+            const base = (tipo, etiquetas, datos, titulo) => ({ type: tipo, data: { labels: etiquetas, datasets: [{ label: titulo, data: datos, backgroundColor: ['#635bff','#18e0b5','#b14cff','#ffb547','#ff5577'], borderColor: '#72eaff', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#edf5ff' } } }, scales: tipo === 'bar' ? { x: { ticks: { color: '#91a4c5' } }, y: { ticks: { color: '#91a4c5' } } } : {} } });
+            const categoriasGrafico = agrupar('categoria'), estadosGrafico = agrupar('estado');
+            crear('grafico-categoria', base('doughnut', Object.keys(categoriasGrafico), Object.values(categoriasGrafico), 'Productos'));
+            crear('grafico-estado', base('pie', Object.keys(estadosGrafico), Object.values(estadosGrafico), 'Estados'));
+            const porDia = ventas.reduce((r, v) => { const dia = String(v.fecha || '').slice(0, 10) || 'Sin fecha'; r[dia] = (r[dia] || 0) + Number(v.total || 0); return r; }, {});
+            crear('grafico-ventas', base('bar', Object.keys(porDia), Object.values(porDia), 'Ingresos'));
+            crear('grafico-ganancias', base('bar', Object.keys(porDia), Object.keys(porDia).map(dia => ventas.filter(v => String(v.fecha || '').slice(0, 10) === dia).reduce((s, v) => s + Number(v.ganancia || 0), 0)), 'Ganancias'));
+        }
+        const renderizarCompleto = renderizar;
+        renderizar = function() { renderizarCompleto(); actualizarAdministracion(); actualizarGraficos(); };
+        actualizarAdministracion(); actualizarGraficos();
+        document.addEventListener('keydown', evento => { if (evento.key === 'Escape') modalAcceso.classList.add('oculto'); });
     </script>
 </body>
 </html>
