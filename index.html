@@ -1,9 +1,9 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EmprendeStock</title>
+    <title>INVENTIFY</title>
     <meta name="theme-color" content="#34495e">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -581,7 +581,7 @@
     <header>
         <div class="encabezado-marca">
             <button class="btn-menu" id="btn-menu-lateral" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
-            <h1 data-i18n="tituloApp">EmprendeStock</h1>
+            <h1 data-i18n="tituloApp">INVENTIFY</h1>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
             <button class="btn-secundario btn-pdf" id="btn-compras-pdf" type="button" data-i18n="btnOrdenCompra">🛒 Orden de compra</button>
@@ -638,7 +638,7 @@
             <div class="plan-usuario" aria-live="polite">
                 <div class="plan-usuario-cabecera"><strong>✨ Tu plan</strong><span id="etiqueta-plan-usuario" class="etiqueta-plan">GRATIS</span></div>
                 <p id="detalle-plan-usuario">Plan gratuito: hasta 30 productos y funciones esenciales.</p>
-                <button class="btn-editar" id="btn-ver-plan-pro" type="button">Conocer EmprendeStock Pro</button>
+                <button class="btn-editar" id="btn-ver-plan-pro" type="button">Conocer INVENTIFY Pro</button>
             </div>
 
             <div class="accesos-usuario">
@@ -1051,7 +1051,7 @@
     <div id="notificacion" role="status" aria-live="polite"></div>
     <div id="modal-bienvenida" class="modal oculto" role="dialog" aria-modal="true">
         <div class="modal-contenido">
-            <h2>👋 ¡Bienvenido a EmprendeStock!</h2>
+            <h2>👋 ¡Bienvenido a INVENTIFY!</h2>
             <p class="texto-confirmacion">Tu espacio para organizar el inventario, controlar existencias, registrar ventas y conocer tus ganancias.</p>
             <div class="recomendacion exito-analisis" style="text-align:left; margin:14px 0;">
                 <strong>🚀 Todo listo para comenzar</strong>
@@ -1306,7 +1306,7 @@
             etiqueta.style.background = esPro ? 'var(--purple)' : 'var(--green)';
             etiqueta.style.color = 'white';
             detalle.textContent = esPro
-                ? 'EmprendeStock Pro: productos ilimitados y herramientas avanzadas.'
+                ? 'INVENTIFY Pro: productos ilimitados y herramientas avanzadas.'
                 : `Plan gratuito: hasta ${LIMITE_PLAN_GRATUITO} productos y funciones esenciales.`;
         }
         actualizarPlanUsuario();
@@ -1631,9 +1631,9 @@
         const monedaLocal = valor => formatearMoneda(valor);
 
         const TRADUCCIONES = {
-            es: { proveedoresTitulo:'🏷️ Comparativa de proveedores', proveedoresNota:'Consulta los costos registrados y descubre cuál opción resulta más rentable.', guiaTitulo:'📘 Guía de uso sencillo', faqTitulo:'❓ Preguntas frecuentes', asistenteTitulo:'🤖 Asistente de inventario', tituloApp:'EmprendeStock', menuDashboard:'📊 Panel General', menuInventario:'📦 Inventario', menuVentas:'🛒 Historial Ventas', menuMovimientos:'📋 Movimientos', menuConfig:'⚙️ Configuración', tarjetaProductos:'Productos', tarjetaUnidades:'Unidades', tarjetaValor:'Valor Inventario', tarjetaGananciaEst:'Ganancia estimada', tarjetaAlertas:'Alertas stock', balanceTitulo:'💰 Balance Financiero y Ganancias Realizadas', balanceNota:'Basado en el historial de ventas registradas.', totalVentas:'Total Ingresos por Ventas', gananciaNeta:'Ganancia Neta Realizada', grafCategoria:'Productos por categoría', grafEstado:'Productos por estado', optCategoria:'Categoría', optEstado:'Estado', estDisponible:'Disponible', estAgotado:'Agotado', estPendiente:'Pendiente', btnAgregar:'Agregar producto', btnCancelar:'Cancelar edición', histVentasTitulo:'Historial de ventas', histVentasNota:'Registro de ventas procesadas en el sistema.', resumenVentasTitulo:'📈 Resumen de productos vendidos', histMovTitulo:'Registro de movimientos', histMovNota:'Las entradas, salidas y ajustes quedan guardados automáticamente.', cfgTitulo:'Ajustes Generales', lblMoneda:'Moneda principal:', lblIdioma:'Idioma de la app:', lblTema:'Apariencia visual:', btnModoOscuro:'🌙 Modo oscuro', cfgCopiaTitulo:'Copia de Seguridad y Datos', cfgCopiaNota:'Guarda un archivo de respaldo o restaura tu información en otro dispositivo.', btnExportar:'📥 Exportar copia de seguridad', btnImportar:'📤 Importar datos', btnOrdenCompra:'🛒 Orden de compra', btnReportePdf:'📄 Reporte PDF', phNombre:'Nombre del producto', phCantidad:'Cantidad', phPrecioVenta:'Precio de venta', phPrecioCompra:'Precio de compra (Costo)', phStockMinimo:'Stock mínimo', phProveedor:'Proveedor', phBuscar:'Buscar por producto o proveedor...', fTodasCat:'Todas las categorías', fTodosEst:'Todos los estados', fTodoStock:'Todo el stock', fStockBajo:'Stock bajo', fAgotados:'Agotados', fVencidos:'Vencidos', fProximos:'Vencen en 30 días', btnLimpiar:'Limpiar filtros' },
-            en: { proveedoresTitulo:'🏷️ Supplier comparison', proveedoresNota:'Review supplier costs and find the most profitable option.', guiaTitulo:'📘 Simple user guide', faqTitulo:'❓ Frequently asked questions', asistenteTitulo:'🤖 Inventory assistant', tituloApp:'EmprendeStock', menuDashboard:'📊 Dashboard', menuInventario:'📦 Inventory', menuVentas:'🛒 Sales history', menuMovimientos:'📋 Movements', menuConfig:'⚙️ Settings', tarjetaProductos:'Products', tarjetaUnidades:'Units', tarjetaValor:'Inventory value', tarjetaGananciaEst:'Estimated profit', tarjetaAlertas:'Stock alerts', balanceTitulo:'💰 Financial balance and completed profit', balanceNota:'Based on recorded sales.', totalVentas:'Total sales income', gananciaNeta:'Completed net profit', grafCategoria:'Products by category', grafEstado:'Products by status', optCategoria:'Category', optEstado:'Status', estDisponible:'Available', estAgotado:'Out of stock', estPendiente:'Pending', btnAgregar:'Add product', btnCancelar:'Cancel editing', histVentasTitulo:'Sales history', histVentasNota:'Sales recorded in the system.', resumenVentasTitulo:'📈 Sold products summary', histMovTitulo:'Movement log', histMovNota:'Entries, exits and adjustments are saved automatically.', cfgTitulo:'General settings', lblMoneda:'Main currency:', lblIdioma:'App language:', lblTema:'Appearance:', btnModoOscuro:'🌙 Dark mode', cfgCopiaTitulo:'Backup and data', cfgCopiaNota:'Save or restore your information on another device.', btnExportar:'📥 Export backup', btnImportar:'📤 Import data', btnOrdenCompra:'🛒 Purchase order', btnReportePdf:'📄 PDF report', phNombre:'Product name', phCantidad:'Quantity', phPrecioVenta:'Sale price', phPrecioCompra:'Purchase price (cost)', phStockMinimo:'Minimum stock', phProveedor:'Supplier', phBuscar:'Search by product or supplier...', fTodasCat:'All categories', fTodosEst:'All statuses', fTodoStock:'All stock', fStockBajo:'Low stock', fAgotados:'Out of stock', fVencidos:'Expired', fProximos:'Expires in 30 days', btnLimpiar:'Clear filters' },
-            fr: { proveedoresTitulo:'🏷️ Comparaison des fournisseurs', proveedoresNota:'Consultez les coûts et trouvez l’option la plus rentable.', guiaTitulo:'📘 Guide d’utilisation simple', faqTitulo:'❓ Questions fréquentes', asistenteTitulo:'🤖 Assistant d’inventaire', tituloApp:'EmprendeStock', menuDashboard:'📊 Tableau de bord', menuInventario:'📦 Inventaire', menuVentas:'🛒 Historique des ventes', menuMovimientos:'📋 Mouvements', menuConfig:'⚙️ Configuration', tarjetaProductos:'Produits', tarjetaUnidades:'Unités', tarjetaValor:'Valeur de l’inventaire', tarjetaGananciaEst:'Bénéfice estimé', tarjetaAlertas:'Alertes de stock', balanceTitulo:'💰 Solde financier et bénéfices réalisés', balanceNota:'Selon les ventes enregistrées.', totalVentas:'Revenus totaux des ventes', gananciaNeta:'Bénéfice net réalisé', grafCategoria:'Produits par catégorie', grafEstado:'Produits par état', optCategoria:'Catégorie', optEstado:'État', estDisponible:'Disponible', estAgotado:'Épuisé', estPendiente:'En attente', btnAgregar:'Ajouter le produit', btnCancelar:'Annuler la modification', histVentasTitulo:'Historique des ventes', histVentasNota:'Ventes enregistrées dans le système.', resumenVentasTitulo:'📈 Résumé des produits vendus', histMovTitulo:'Journal des mouvements', histMovNota:'Les entrées, sorties et ajustements sont enregistrés automatiquement.', cfgTitulo:'Paramètres généraux', lblMoneda:'Devise principale :', lblIdioma:'Langue de l’application :', lblTema:'Apparence :', btnModoOscuro:'🌙 Mode sombre', cfgCopiaTitulo:'Sauvegarde et données', cfgCopiaNota:'Enregistrez ou restaurez vos informations sur un autre appareil.', btnExportar:'📥 Exporter la sauvegarde', btnImportar:'📤 Importer les données', btnOrdenCompra:'🛒 Bon de commande', btnReportePdf:'📄 Rapport PDF', phNombre:'Nom du produit', phCantidad:'Quantité', phPrecioVenta:'Prix de vente', phPrecioCompra:'Prix d’achat (coût)', phStockMinimo:'Stock minimum', phProveedor:'Fournisseur', phBuscar:'Rechercher un produit ou fournisseur...', fTodasCat:'Toutes les catégories', fTodosEst:'Tous les états', fTodoStock:'Tout le stock', fStockBajo:'Stock faible', fAgotados:'Épuisés', fVencidos:'Expirés', fProximos:'Expire dans 30 jours', btnLimpiar:'Effacer les filtres' }
+            es: { proveedoresTitulo:'🏷️ Comparativa de proveedores', proveedoresNota:'Consulta los costos registrados y descubre cuál opción resulta más rentable.', guiaTitulo:'📘 Guía de uso sencillo', faqTitulo:'❓ Preguntas frecuentes', asistenteTitulo:'🤖 Asistente de inventario', tituloApp:'INVENTIFY', menuDashboard:'📊 Panel General', menuInventario:'📦 Inventario', menuVentas:'🛒 Historial Ventas', menuMovimientos:'📋 Movimientos', menuConfig:'⚙️ Configuración', tarjetaProductos:'Productos', tarjetaUnidades:'Unidades', tarjetaValor:'Valor Inventario', tarjetaGananciaEst:'Ganancia estimada', tarjetaAlertas:'Alertas stock', balanceTitulo:'💰 Balance Financiero y Ganancias Realizadas', balanceNota:'Basado en el historial de ventas registradas.', totalVentas:'Total Ingresos por Ventas', gananciaNeta:'Ganancia Neta Realizada', grafCategoria:'Productos por categoría', grafEstado:'Productos por estado', optCategoria:'Categoría', optEstado:'Estado', estDisponible:'Disponible', estAgotado:'Agotado', estPendiente:'Pendiente', btnAgregar:'Agregar producto', btnCancelar:'Cancelar edición', histVentasTitulo:'Historial de ventas', histVentasNota:'Registro de ventas procesadas en el sistema.', resumenVentasTitulo:'📈 Resumen de productos vendidos', histMovTitulo:'Registro de movimientos', histMovNota:'Las entradas, salidas y ajustes quedan guardados automáticamente.', cfgTitulo:'Ajustes Generales', lblMoneda:'Moneda principal:', lblIdioma:'Idioma de la app:', lblTema:'Apariencia visual:', btnModoOscuro:'🌙 Modo oscuro', cfgCopiaTitulo:'Copia de Seguridad y Datos', cfgCopiaNota:'Guarda un archivo de respaldo o restaura tu información en otro dispositivo.', btnExportar:'📥 Exportar copia de seguridad', btnImportar:'📤 Importar datos', btnOrdenCompra:'🛒 Orden de compra', btnReportePdf:'📄 Reporte PDF', phNombre:'Nombre del producto', phCantidad:'Cantidad', phPrecioVenta:'Precio de venta', phPrecioCompra:'Precio de compra (Costo)', phStockMinimo:'Stock mínimo', phProveedor:'Proveedor', phBuscar:'Buscar por producto o proveedor...', fTodasCat:'Todas las categorías', fTodosEst:'Todos los estados', fTodoStock:'Todo el stock', fStockBajo:'Stock bajo', fAgotados:'Agotados', fVencidos:'Vencidos', fProximos:'Vencen en 30 días', btnLimpiar:'Limpiar filtros' },
+            en: { proveedoresTitulo:'🏷️ Supplier comparison', proveedoresNota:'Review supplier costs and find the most profitable option.', guiaTitulo:'📘 Simple user guide', faqTitulo:'❓ Frequently asked questions', asistenteTitulo:'🤖 Inventory assistant', tituloApp:'INVENTIFY', menuDashboard:'📊 Dashboard', menuInventario:'📦 Inventory', menuVentas:'🛒 Sales history', menuMovimientos:'📋 Movements', menuConfig:'⚙️ Settings', tarjetaProductos:'Products', tarjetaUnidades:'Units', tarjetaValor:'Inventory value', tarjetaGananciaEst:'Estimated profit', tarjetaAlertas:'Stock alerts', balanceTitulo:'💰 Financial balance and completed profit', balanceNota:'Based on recorded sales.', totalVentas:'Total sales income', gananciaNeta:'Completed net profit', grafCategoria:'Products by category', grafEstado:'Products by status', optCategoria:'Category', optEstado:'Status', estDisponible:'Available', estAgotado:'Out of stock', estPendiente:'Pending', btnAgregar:'Add product', btnCancelar:'Cancel editing', histVentasTitulo:'Sales history', histVentasNota:'Sales recorded in the system.', resumenVentasTitulo:'📈 Sold products summary', histMovTitulo:'Movement log', histMovNota:'Entries, exits and adjustments are saved automatically.', cfgTitulo:'General settings', lblMoneda:'Main currency:', lblIdioma:'App language:', lblTema:'Appearance:', btnModoOscuro:'🌙 Dark mode', cfgCopiaTitulo:'Backup and data', cfgCopiaNota:'Save or restore your information on another device.', btnExportar:'📥 Export backup', btnImportar:'📤 Import data', btnOrdenCompra:'🛒 Purchase order', btnReportePdf:'📄 PDF report', phNombre:'Product name', phCantidad:'Quantity', phPrecioVenta:'Sale price', phPrecioCompra:'Purchase price (cost)', phStockMinimo:'Minimum stock', phProveedor:'Supplier', phBuscar:'Search by product or supplier...', fTodasCat:'All categories', fTodosEst:'All statuses', fTodoStock:'All stock', fStockBajo:'Low stock', fAgotados:'Out of stock', fVencidos:'Expired', fProximos:'Expires in 30 days', btnLimpiar:'Clear filters' },
+            fr: { proveedoresTitulo:'🏷️ Comparaison des fournisseurs', proveedoresNota:'Consultez les coûts et trouvez l’option la plus rentable.', guiaTitulo:'📘 Guide d’utilisation simple', faqTitulo:'❓ Questions fréquentes', asistenteTitulo:'🤖 Assistant d’inventaire', tituloApp:'INVENTIFY', menuDashboard:'📊 Tableau de bord', menuInventario:'📦 Inventaire', menuVentas:'🛒 Historique des ventes', menuMovimientos:'📋 Mouvements', menuConfig:'⚙️ Configuration', tarjetaProductos:'Produits', tarjetaUnidades:'Unités', tarjetaValor:'Valeur de l’inventaire', tarjetaGananciaEst:'Bénéfice estimé', tarjetaAlertas:'Alertes de stock', balanceTitulo:'💰 Solde financier et bénéfices réalisés', balanceNota:'Selon les ventes enregistrées.', totalVentas:'Revenus totaux des ventes', gananciaNeta:'Bénéfice net réalisé', grafCategoria:'Produits par catégorie', grafEstado:'Produits par état', optCategoria:'Catégorie', optEstado:'État', estDisponible:'Disponible', estAgotado:'Épuisé', estPendiente:'En attente', btnAgregar:'Ajouter le produit', btnCancelar:'Annuler la modification', histVentasTitulo:'Historique des ventes', histVentasNota:'Ventes enregistrées dans le système.', resumenVentasTitulo:'📈 Résumé des produits vendus', histMovTitulo:'Journal des mouvements', histMovNota:'Les entrées, sorties et ajustements sont enregistrés automatiquement.', cfgTitulo:'Paramètres généraux', lblMoneda:'Devise principale :', lblIdioma:'Langue de l’application :', lblTema:'Apparence :', btnModoOscuro:'🌙 Mode sombre', cfgCopiaTitulo:'Sauvegarde et données', cfgCopiaNota:'Enregistrez ou restaurez vos informations sur un autre appareil.', btnExportar:'📥 Exporter la sauvegarde', btnImportar:'📤 Importer les données', btnOrdenCompra:'🛒 Bon de commande', btnReportePdf:'📄 Rapport PDF', phNombre:'Nom du produit', phCantidad:'Quantité', phPrecioVenta:'Prix de vente', phPrecioCompra:'Prix d’achat (coût)', phStockMinimo:'Stock minimum', phProveedor:'Fournisseur', phBuscar:'Rechercher un produit ou fournisseur...', fTodasCat:'Toutes les catégories', fTodosEst:'Tous les états', fTodoStock:'Tout le stock', fStockBajo:'Stock faible', fAgotados:'Épuisés', fVencidos:'Expirés', fProximos:'Expire dans 30 jours', btnLimpiar:'Effacer les filtres' }
         };
         function aplicarIdioma(idioma) {
             const textos = TRADUCCIONES[idioma] || TRADUCCIONES.es;
@@ -1763,7 +1763,7 @@
             if (!producto.nombre || !producto.categoria || !producto.estado || !producto.proveedor || producto.cantidad < 0 || producto.precio < 0 || producto.precioCompra < 0 || producto.stockMinimo < 0) return notificar('Revisa los datos del producto');
             const esPro = localStorage.getItem('planInventify') === 'pro';
             if (!esPro && indice < 0 && productos.length >= LIMITE_PLAN_GRATUITO) {
-                return notificar(`El plan gratuito permite hasta ${LIMITE_PLAN_GRATUITO} productos. Conoce EmprendeStock Pro desde el menú de usuario.`, true);
+                return notificar(`El plan gratuito permite hasta ${LIMITE_PLAN_GRATUITO} productos. Conoce INVENTIFY Pro desde el menú de usuario.`, true);
             }
             if (producto.precio < producto.precioCompra && !confirm('El precio de venta es menor que el costo. ¿Deseas guardar de todos modos?')) return;
             const repetido = productos.some((p, i) => i !== indice && String(p.nombre).trim().toLowerCase() === producto.nombre.toLowerCase());
@@ -1880,10 +1880,10 @@
         document.getElementById('btn-ver-plan-pro').addEventListener('click', () => {
             const esPro = localStorage.getItem('planInventify') === 'pro';
             if (esPro) {
-                notificar('Ya estás usando EmprendeStock Pro.');
+                notificar('Ya estás usando INVENTIFY Pro.');
                 return;
             }
-            alert('EmprendeStock Pro incluye productos ilimitados, reportes avanzados, copias automáticas, gastos, metas y empleados. El pago real debe conectarse a un servidor y proveedor de pagos.');
+            alert('INVENTIFY Pro incluye productos ilimitados, reportes avanzados, copias automáticas, gastos, metas y empleados. El pago real debe conectarse a un servidor y proveedor de pagos.');
         });
         document.getElementById('btn-cerrar-acceso').addEventListener('click', () => modalAcceso.classList.add('oculto'));
         document.getElementById('btn-zona-admin').addEventListener('click', () => {
@@ -1970,7 +1970,7 @@
             const nombre = escapar(nombreDestinatario.trim() || 'Cliente general');
             const ventana = window.open('', '_blank');
             if (!ventana) return notificar('Permite ventanas emergentes para imprimir.', true);
-            ventana.document.write(`<html><head><title>EmprendeStock - Comprobante de venta</title></head><body style="font-family:Arial;padding:25px"><h2>Comprobante de venta</h2><p><strong>Cliente:</strong> ${nombre}</p><p>${new Date(ultimaVentaComprobante.fecha).toLocaleString()}</p>${ultimaVentaComprobante.items.map(i => `<p>${escapar(i.nombre)} × ${i.cantidad}: ${monedaLocal(i.total)}</p>`).join('')}<hr><h3>Total: ${monedaLocal(ultimaVentaComprobante.total)}</h3><script>window.print()<\/script></body></html>`);
+            ventana.document.write(`<html><head><title>INVENTIFY - Comprobante de venta</title></head><body style="font-family:Arial;padding:25px"><h2>Comprobante de venta</h2><p><strong>Cliente:</strong> ${nombre}</p><p>${new Date(ultimaVentaComprobante.fecha).toLocaleString()}</p>${ultimaVentaComprobante.items.map(i => `<p>${escapar(i.nombre)} × ${i.cantidad}: ${monedaLocal(i.total)}</p>`).join('')}<hr><h3>Total: ${monedaLocal(ultimaVentaComprobante.total)}</h3><script>window.print()<\/script></body></html>`);
             ventana.document.close();
         });
         document.getElementById('btn-exportar-ventas').addEventListener('click', () => { const filas = [['Producto','Cantidad','Total','Ganancia','Fecha','Usuario'], ...ventas.map(v => [v.nombre, v.cantidad || 1, v.total, v.ganancia, v.fecha, v.usuario || 'Sistema'])]; descargarArchivo(`ventas-${new Date().toISOString().slice(0,10)}.csv`, '\ufeff' + filas.map(f => f.map(v => `"${String(v ?? '').replaceAll('"','""')}"`).join(',')).join('\n'), 'text/csv;charset=utf-8'); });
@@ -2116,7 +2116,7 @@
         // Genera órdenes de compra, reportes de inventario o informes mensuales.
         function generarReporte(tipo) {
             const fecha = new Date().toLocaleString();
-            let contenido = `EmprendeStock\nGenerado: ${fecha}\n\n`;
+            let contenido = `INVENTIFY\nGenerado: ${fecha}\n\n`;
             if (!productos.length && tipo !== 'mensual') notificar('No hay productos para incluir en el reporte.', true);
             if (tipo === 'orden-compra') {
                 const bajos = productos.filter(p => Number(p.cantidad) <= Number(p.stockMinimo));
@@ -2138,7 +2138,7 @@
             if (window.jspdf?.jsPDF) {
                 const documento = new window.jspdf.jsPDF();
                 documento.setFontSize(14);
-                documento.text('EmprendeStock', 14, 18);
+                documento.text('INVENTIFY', 14, 18);
                 documento.setFontSize(10);
                 documento.text(`Generado: ${fecha}`, 14, 26);
                 const lineas = documento.splitTextToSize(contenido, 180);
